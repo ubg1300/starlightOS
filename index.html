@@ -130,6 +130,7 @@
             transition: background-color 0.1s;
         }
 
+        .window-controls .refresh:hover { background-color: #a5b4fc; } /* New hover color */
         .window-controls .minimize:hover { background-color: #ffe082; }
         .window-controls .maximize:hover { background-color: #90EE90; }
         .window-controls .close:hover { background-color: #e57373; }
@@ -198,6 +199,20 @@
         
         .desktop-context-menu {
             z-index: 100; /* Above windows and dock */
+        }
+        
+        /* Custom styling for form inputs */
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--window-border);
+            background-color: var(--window-bg);
+            color: var(--window-text);
+        }
+        .form-input:focus, .form-select:focus {
+            outline: 2px solid var(--starlight-primary);
+            border-color: var(--starlight-primary);
         }
 
     </style>
@@ -298,6 +313,26 @@
         const iconRightClickMenu = document.getElementById('icon-right-click-menu');
         const downloadedAppMenu = document.getElementById('downloaded-app-menu');
         const pinUnpinOption = document.getElementById('pin-unpin-option');
+        
+        // --- NEW: Add the FAVICONS database object ---
+        const FAVICONS = {
+            "Home | iCivics": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAV1BMVEVHcEz/ZAD/ZwD/WwD/WwD/YAD/ZAD/WwD/WwD/WwD/WwD/WwD/WwD/WwD/ZgD/WwD/WwD/WwD/aAD/gAD/kQD/kAD/kQD/kQD/kQD/ZQD/kQD/jQD/bwAvM226AAAAHHRSTlMACCEwRhgPhrjT4e6tdjyd+/9a///yfrli/53evbsBzAAAAOVJREFUeAGtkgUSwlAMRL+71u3+18QSHDrWheqbbpQcIcq4EIJL+o2U0MY672yI6ZPx7EoFFavVG0sWCeDAXpmr7zLy6Wnrp7JCpjK6OZMNhvYNQgGmPidKVMq+XhXAmGpgmKPMpV4LAsgM5HDPkMX4bAWkU+KzVZ91FMjgQwDbrv8FwfYCh5+2zFxhNz4SGqbEFCVYSqlzd/kUS1m6fjU5ymcT2gtdbk1Y+q7bsAnYvvlCu3VcxvVybbF9mBJSUAuNfyt1A9zOMLLPYc/bts1vw95fExC9LZi7zoP/Xs0kEpfkAJ0B2VoUsYiyizsAAAAASUVORK5CYII=",
+            "Clever | Portal": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQi3ptQJ9ibYtsUiQ1yNX5abVZvtmG9fwqjNpUqzO6N8qbrYgM:https://resources.finalsite.net/images/f_auto,q_auto/v1689877141/mooreschoolscom/emadd6nvplrnh1vsswjf/Clever-Logo.jpg&s",
+            "Home": "https://ssl.gstatic.com/classroom/favicon.ico",
+            "Khan Academy": "https://www.khanacademy.org/favicon.ico",
+            "Google Docs": "https://ssl.gstatic.com/docs/doclist/images/mediatype/icon_1_document_x16.png",
+            "Outlook Mail": "https://outlook.live.com/favicon.ico",
+            "Calculator": "https://www.calculator.net/favicon.ico",
+            "Google": "https://google.com/favicon.ico",
+            "Google Classroom - Google Search": "https://google.com/favicon.ico",
+            "Activate Learning Digital Platform - Home": "https://activatelearning.com/wp-content/uploads/2023/05/favicon.png",
+            "Gallopade: Educational Products, Social Studies Curriculum, Reading, Common Core": "https://gallopade.com/favicon.ico",
+            "Classes | IL Classroom": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAV1BMVEVHcEwAAHwAAH0AAHwAAHwAAHwAAHwAAH0AAHwAAHwAAHwAAHwAAHoaGoMoKIYAAHZGR5fv8vv///+oqs6Mjr78///3+f5ucKzU1uk4OI/j5vPCxN+fosqdJ3hnAAAADHRSTlMAN4bC6//oX+wj1USkbhSpAAABF0lEQVR4AYTSBwKEIAwEQCxrjQY5g/X/7zwi1+vaHQsEzC1JmuVAkaWJeU1Z4JaqfKK6wVOa+m4t3tI+22etASIg7u+JX25AXR+A++5RG7USZAd3Yh7FT4x7tM0VeHYiSzeIW0F3LELfAd6c810/iBxIIdAkJgWo39aJr8i0LB0rpyZDUGamC/I0e1m3PmhmimAYT5Yj8uiciLiNgdwA4N25FRGtiouIA2cRbw+kXWGcV0uK+RPq6QomqBUm+4ikmJn0/bPzvh6fTbUIdEcsXlsUG5QYU2iFxB/lm+mhK9VT4f0wMdhug1tPHaG8DRlDh4wBULjS8jWfBzu2tf47TVR/2M+pqSmr85CSACxRo2QHNmA0IWcHAAp4HJXYNfpWAAAAAElFTkSuQmCC",
+            "Student Home - Zearn":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAYFBMVEVHcExFvdM6utGKxq8/u9I8utFIvtM8utFFvNM+u9JJvdNAu9Jnxdg/u9E9utFIvtQ/u9E8utFxydolutn1z0D+0Cr1z0H1zj/1z0L1z0H1z0H1zj/1z0H31GD1z0H10EovluFDAAAAIHRSTlMA2P8Vrf8v9EuXcci5auP/XGR9wLmh4v9CW5Vod9EfI0NLlVAAAACgSURBVHgBddDFAcRADATBRTMzO/8ojyTzXH9rUeKUVFKLPxllrXUEzrXfPIy+/RVglaQ+1lD91GCNSENxLk5cm34jvKhnP6lvlvMf7zyVHJhh5HzXdS+Yi2eFIjPAPLYQmGMpCUyDx+yVVIisqilkTUt1wCq2HtjANgKb2CZgXcvNc1VV9TAMJ2wfNbvp9tmyK8B1x/5hlThaur4fT/Ek3sqLEwwJ2FthAAAAAElFTkSuQmCC",
+            "Pear Assessment": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAY1BMVEVHcEwrOkIsO0I0QkMoN0InNkIiMUEnNUImNUEqOEIwPkI0QkMzQEMxP0IyQEMxP0PI21fL3lfQ5FjO4Vi4ylR2hUphcEVNXEKer1CnuVFqekbU6FmAlTmvwVNbaUdATkQAF0B9mIX1AAAAEHRSTlMApyf621LnZv7HHJjFfLc+PB2r8AAAALxJREFUKJHFkEkWgzAMQwljAg+I7cxhuv8pC3RHwrbV9luS7aL4q/qpHothyqGRVWGxVTXk4GCXZTHiJVVYY6v5rXPumDhb37zGe1PnWbdFgLh1WdiuICWsbY41FuUptE0GcgUXBMVTxjTJW6RZarxtBOdIYm0MXdtoFYDMs7W7UkEFFYj085obKocgHSaw3FGCPFbUIe7ls7R2JMHzYyOXfrDnHgEQo+d9emjJjVPKGZ6EfpcSbSvyf/+dPiDkDIV9PRLKAAAAAElFTkSuQmCC",
+            "My Drive - Google Drive":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAB+klEQVR4AWJwL/ChKx68ForXW7SJN1iswYb5GyxaqGqhycrgR+rTAKzUA2hoURwG8Cn3bL/wbNuIz7Y5p9kOY57NMBvZs23bPtt/dW7b4VR94ep3v6OHaJvFJSoaZldQROB+hDJValcFPBj20vB82AsEAYCVyTT1uUykaWitGAQIB1oy22WoKOhKQMCCMKa0dLypYN9dTs7HcMvg5YCAHQKAzLmwpwpYGbORBHH2LAfMY4G4JdmOaJkvBQnsMQ+DHAl5MTSeqjaMASaarvZ00SB8UATCyp1OVzMWgfBDiwLhY7J2+Nn5LScyVCkUfkoI3nLqWivAcB7j52HYSISMEJz9WIwEyyE/AAtEBJLbRLoNiBxigIcVgDO08AwFwnkpwfx4Sx1aSFrmLwAvRDz+BBtaFB6Gg9txA9sEg6d9NLNO+/5HvFz0sXXardmy567d4CFW4F5V1BuXiUgVNBa5jpdEBdz2vTRy2/cyxMtduyFpTjtMotobD1D75Yvs3LjopYDwh9v/5CNWrtsOSjGc/8bFqP/mHtRx7zyVodP7tisgZMeffB8SO6xfLYeIlllvTSkM2jH34UraQeB5VkvexoeWWsttR7bEaPu9Cz95IEZbAVw8wm461+7uuXrp4Q0L6LxxS/NKQQ+t2HpYKEKQPMhXkpkNqoYwXTEA+kphQitc/vYAAAAASUVORK5CYII=",
+            "Google Slides":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAaVBMVEX0tAD///8AAAD75ajzqwDzrQD52Iv//fb4twDxsgD7uQDprAAiGQDzsABkSgD/vQAZEgCugQCVbgDdowAqIAAmHADKlQD3y1vAjgC7iQCccwAUDwBOOgCNaAAzJQDhpwBrTwBdRAANCgDVPr2xAAACrUlEQVR4nO3c23KbMBCAYVVtEiEIBws72KD48P4PWXBKnMRJp06HYdn5vzvf7T9ac7jB2I/a53zVhMQsTRK2u7xur3rM+59ZF/eF927ucb/FOV+E2NV/KVznVeLnnvP/OJ9sD/VXhccqXXjfmUur/PRZYRmDhr6BD7G8LsyadJn/vs+4tMk+FmYbPX0Dv8neF2oL7I9xTDRKAy+J58Ky0XKNecs15Vh4iunc00wijWNhHvTt6MCF40thXWnc0YGv1ufCg84dHaT5UFhvde7owFdZX9gt70Xp3yVdXxi1/gsHPlrTKr2Q/rFvTV3MPcSkimeTa17Sfk1zs1O9pMavjOJ7xcA1Jsw9w8SC0Xw3HGjvAwAAAAAAAAAAAAAAy/D4a1kebw58+rksT7cm3t3/WJb7u5sLH+ae+SYPFFIoHoUUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF83ymce+Yb3Vyo/zvC+r8FDQAAAAAAAAAAAAAAMIFk7gEmlpgw9wgTC6Zxc88wKbc1Kz/3EJNyO5PrLvS5eS7mHmJSRW3a/dxDTMmF1tioeU19tMZ2mu+ISdcXZpXeQ3Tbui+0eTr3IJNJD3YoXKs9RF/V50J7DDqfa1zI7UuhjTr3NI2nsbBU+XDqm9KOhTbb6Et0m8xeChUmjoFjYZ+o64L6GvhaaLMm1XOMLm3GwEuhLWPQcow+xNJeF9pTXqUaGn1aHS9VbwutrQ/bxC97V51PqnxtvyrsG7sYCu+WWem8L/axy94nfSjstXW+24blvVIloVnlz+1Vz29MQXJQo6ciNgAAAABJRU5ErkJggg=="
+        };
 
 
         // --- REAL browser tab close prevention ---
@@ -322,7 +357,7 @@
 
         // 2. Window Manager Helper
         function getWindowTemplate(id, title, initialWidth = '600px', initialHeight = '400px') {
-            const isIframeApp = ['Search', 'Example App'].includes(title);
+            const isIframeApp = ['Search', 'Games', 'Example App'].includes(title);
             const contentPaddingClass = isIframeApp ? 'p-0' : ''; // Use p-0 for iframes
             
             return `
@@ -334,6 +369,11 @@
                             <span>${title}</span>
                         </span>
                         <div class="window-controls flex space-x-2">
+                            ${isIframeApp ? `
+                            <button class="window-button refresh" onclick="refreshWindow('${id}', '${title}')" title="Refresh">
+                                <i data-lucide="rotate-cw" class="w-4 h-4 text-indigo-400"></i>
+                            </button>
+                            ` : ''}
                             <button class="window-button minimize" onclick="minimizeWindow('${id}')" title="Minimize">
                                 <i data-lucide="minus" class="w-4 h-4 text-yellow-400"></i>
                             </button>
@@ -460,6 +500,20 @@
                 win.remove();
                 appConfigs[appName].id = null; // Clear the running ID
                 updateRunningAppsDock(); // Update dock
+            }
+        }
+
+        // --- NEW: Refresh Window Function ---
+        function refreshWindow(id, title) {
+            const win = document.getElementById(id);
+            if (!win) return;
+
+            const iframe = win.querySelector('iframe');
+            const config = appConfigs[title];
+
+            if (iframe && config && config.url) {
+                // Reload the iframe to its original source
+                iframe.src = config.url;
             }
         }
         
@@ -627,13 +681,21 @@
         }
 
 
-        // --- App Configuration ---
-        const defaultAppConfigs = {
-            'Search': { name: 'Search', icon: 'compass', url: 'https://croxyproxy.com/', isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 16 },
-            'App Store': { name: 'App Store', icon: 'store', url: null, isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 106 },
-            'Settings': { name: 'Settings', icon: 'settings', url: null, isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 196 },
-        };
-        Object.assign(appConfigs, defaultAppConfigs);
+        // --- App Configuration (NEW: Using a list/array) ---
+        const appDatabase = [
+            // { name: 'Name', icon: 'lucide-icon-name', url: 'iframe-url' or null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
+            { name: 'Search', icon: 'compass', url: 'https://croxyproxy.com/', isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
+            { name: 'App Store', icon: 'store', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 106 },
+            { name: 'Settings', icon: 'settings', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 196 },
+        ];
+        
+        // This function converts the list above into the object the OS uses
+        function initializeAppConfigs() {
+            appDatabase.forEach(appData => {
+                appConfigs[appData.name] = { ...appData, id: null }; // Add 'id: null' to track runtime state
+            });
+        }
+        
         
         // --- App Launcher ---
         function openApp(appName) {
@@ -685,7 +747,7 @@
                 if (appName === 'Settings') {
                     setupSettingsListeners();
                 } else if (appName === 'App Store') {
-                    setupAppStoreListeners();
+                    // No setup needed, buttons are dynamic
                 }
             }
 
@@ -707,42 +769,67 @@
             }, 0);
         }
 
+        // --- NEW: Database for apps available IN THE STORE ---
+        // This is the list you edit to add more apps
+        const storeAppDatabase = [
+            {
+                name: 'Games',
+                icon: 'rocket', // User's requested icon
+                url: 'https://www.coolmathgames.com/', // User's requested URL
+                description: 'A collection of fun browser games.'
+            },
+            {
+                name: 'Example App',
+                icon: 'cpu', 
+                url: 'https://example.com/',
+                description: 'A simple external browser simulation.'
+            }
+            // Add more apps here!
+            // { name: 'Drawing App', icon: 'edit-3', url: 'https://some-drawing-app.com', description: 'A simple sketchpad.' }
+        ];
+
         // --- App Content Generators ---
         function getAppContent(appName) {
             switch (appName) {
                 case 'App Store':
-                    const isExampleAppInstalled = appConfigs['Example App'];
-                    
-                    // Button class for NOT INSTALLED state
-                    const downloadButtonClasses = 'bg-blue-600 hover:bg-blue-700 text-white';
-                    
-                    // FIX: Theme Contrast - Use dark text in light mode for better contrast
-                    const installedButtonClasses = 'bg-green-500 text-gray-800 dark:text-white cursor-not-allowed';
+                    let appCardsHTML = ''; // Start with empty HTML
+
+                    // Loop through the store database
+                    storeAppDatabase.forEach(app => {
+                        const appName = app.name;
+                        // Check if the app is already "installed" in our main config
+                        const isInstalled = appConfigs[appName] && appConfigs[appName].isDownloaded;
+
+                        // Set button state based on whether it's installed
+                        const buttonClasses = isInstalled
+                            ? 'bg-green-500 text-gray-800 cursor-not-allowed' // Installed (light mode)
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'; // Download (light mode)
+                        
+                        const buttonText = isInstalled ? 'Installed' : 'Download';
+                        const buttonDisabled = isInstalled ? 'disabled' : '';
+                        const buttonClick = isInstalled ? '' : `onclick="downloadAppFromStore('${appName}', event)"`;
+
+                        appCardsHTML += `
+                        <div class="flex items-center justify-between p-4 rounded-lg shadow-inner" style="background-color: var(--window-row-bg);">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="${app.icon}" class="w-8 h-8" style="color: var(--starlight-primary);"></i>
+                                <div>
+                                    <div class="font-semibold text-lg" style="color: var(--window-text);">${app.name}</div>
+                                    <div class="text-sm" style="color: var(--window-secondary-text);">${app.description}</div>
+                                </div>
+                            </div>
+                            <button id="download-btn-${appName.replace(/\s/g, '-')}" ${buttonDisabled} ${buttonClick} class="px-4 py-2 rounded-full transition duration-150 shadow-md ${buttonClasses}">
+                                ${buttonText}
+                            </button>
+                        </div>
+                        `;
+                    });
 
                     return `
                         <div class="p-4 space-y-4">
-                            <!-- FIX: Added text-gray-900 for light mode -->
-                            <h2 class="text-xl font-bold border-b pb-2 text-gray-900" style="border-color: var(--window-border); color: var(--window-text);">Starlight App Store</h2>
+                            <h2 class="text-xl font-bold border-b pb-2" style="border-color: var(--window-border); color: var(--window-text);">Starlight App Store</h2>
                             <p class="" style="color: var(--window-secondary-text);">Discover and install new applications for StarlightOS.</p>
-                            
-                            <!-- Example App Card -->
-                            <div class="flex items-center justify-between p-4 rounded-lg shadow-inner" style="background-color: var(--window-row-bg);">
-                                <div class="flex items-center space-x-3">
-                                    <i data-lucide="rocket" class="w-8 h-8" style="color: var(--starlight-primary);"></i>
-                                    <div>
-                                        <!-- FIX: Added text-gray-900 for light mode -->
-                                        <div class="font-semibold text-lg text-gray-900" style="color: var(--window-text);">Example Browser App</div>
-                                        <div class="text-sm" style="color: var(--window-secondary-text);">Simple external browser simulation. (example.com)</div>
-                                    </div>
-                                </div>
-                                <button id="download-example-app" ${isExampleAppInstalled ? 'disabled' : ''} class="px-4 py-2 rounded-full transition duration-150 shadow-md 
-                                    ${isExampleAppInstalled 
-                                        ? installedButtonClasses
-                                        : downloadButtonClasses
-                                    }">
-                                    ${isExampleAppInstalled ? 'Installed' : 'Download'}
-                                </button>
-                            </div>
+                            ${appCardsHTML} 
                         </div>
                     `;
                 case 'Settings':
@@ -770,6 +857,32 @@
                                 </div>
                             </div>
                             
+                            <!-- NEW: Tab Cloaking Section -->
+                            <div class="border-b pb-4" style="border-color: var(--window-border);">
+                                <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Tab Cloaking</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="cloak-select" class="block text-sm font-medium mb-1" style="color: var(--window-secondary-text);">Select a preset cloak</label>
+                                        <select id="cloak-select" class="form-select">
+                                            <!-- Options will be populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div id="custom-cloak-inputs" class="hidden space-y-3">
+                                        <div>
+                                            <label for="custom-title" class="block text-sm font-medium mb-1" style="color: var(--window-secondary-text);">Custom Title</label>
+                                            <input type="text" id="custom-title" placeholder="e.g., Google Docs" class="form-input">
+                                        </div>
+                                        <div>
+                                            <label for="custom-favicon" class="block text-sm font-medium mb-1" style="color: var(--window-secondary-text);">Custom Favicon URL</label>
+                                            <input type="text" id="custom-favicon" placeholder="e.g., https://google.com/favicon.ico" class="form-input">
+                                        </div>
+                                        <button onclick="applyCustomCloak()" class="w-full px-4 py-2 rounded-lg text-white" style="background-color: var(--starlight-primary); opacity: 0.8; hover:opacity: 1;">
+                                            Apply Custom Cloak
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Close Prevention -->
                             <div>
                                 <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Security & Prevention</h3>
@@ -777,7 +890,7 @@
                                     <label for="prevent-close-toggle" class="font-medium" style="color: var(--window-text);">Prevent REAL Tab Close</label>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" id="prevent-close-toggle" class="sr-only peer" ${preventClose ? 'checked' : ''}>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
                                              style="background-color: var(--starlight-primary); filter: grayscale(0.7);"></div>
                                     </label>
                                 </div>
@@ -792,19 +905,19 @@
         // --- End App Content Generators ---
 
         // --- App Store Logic ---
-        function setupAppStoreListeners() {
-            const button = document.getElementById('download-example-app');
-            if (button && !button.disabled) {
-                button.addEventListener('click', handleAppDownload);
-            }
-        }
+        
+        // NEW: Generic function to download any app from the store
+        function downloadAppFromStore(appName, e) {
+            e.stopPropagation(); // Stop click from bubbling
 
-        function handleAppDownload(e) {
-            const button = e.target;
+            const appData = storeAppDatabase.find(app => app.name === appName);
+            if (!appData) return;
+
+            const button = document.getElementById(`download-btn-${appName.replace(/\s/g, '-')}`);
+            if (!button) return;
+
             button.disabled = true;
             button.textContent = 'Downloading... 0%';
-            
-            // Apply neutral disabled styling (works in all themes)
             button.className = 'px-4 py-2 rounded-full transition duration-150 shadow-md bg-gray-400 text-white cursor-not-allowed';
 
             let progress = 0;
@@ -814,16 +927,14 @@
                 if (progress >= 100) {
                     clearInterval(interval);
                     
-                    const appName = 'Example App';
-                    
                     // Add new app config with initial position (next available spot)
                     const existingIcons = document.querySelectorAll('.desktop-icon-item').length;
                     const initialY = ICON_PADDING + existingIcons * GRID_SIZE; 
 
                     appConfigs[appName] = {
-                        name: appName,
-                        icon: 'rocket', 
-                        url: 'https://example.com/',
+                        name: appData.name,
+                        icon: appData.icon, 
+                        url: appData.url,
                         isDownloaded: true,
                         isPinned: false, // Not pinned by default
                         id: null,
@@ -881,12 +992,79 @@
 
         // --- Settings Logic (REMOVED dark mode, ADDED theme changer) ---
         function setupSettingsListeners() {
-            // Note: The theme buttons have their own onclick="" attributes
-            
+            // Setup "Prevent Close" toggle
             document.getElementById('prevent-close-toggle').addEventListener('change', (e) => {
                 preventClose = e.target.checked;
             });
+            
+            // --- NEW: Setup Cloaking Dropdown ---
+            const cloakSelect = document.getElementById('cloak-select');
+            const customInputs = document.getElementById('custom-cloak-inputs');
+            
+            // 1. Populate Dropdown
+            cloakSelect.innerHTML = '<option value="">Select a preset...</option>'; // Default
+            for (const title in FAVICONS) {
+                const option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                cloakSelect.appendChild(option);
+            }
+            cloakSelect.innerHTML += '<option value="custom">Custom...</option>'; // Add custom option
+            
+            // 2. Add listener
+            cloakSelect.addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (value === 'custom') {
+                    customInputs.classList.remove('hidden');
+                } else if (value) {
+                    customInputs.classList.add('hidden');
+                    applyCloak(value); // Apply preset immediately
+                } else {
+                    customInputs.classList.add('hidden');
+                }
+            });
         }
+        
+        // --- NEW: Cloaking Functions ---
+        
+        // Helper function to set the favicon
+        function setFavicon(url) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = url;
+        }
+
+        // Applies a cloak from the preset dropdown
+        function applyCloak(presetName) {
+            if (!presetName || !FAVICONS[presetName]) return;
+            
+            const faviconUrl = FAVICONS[presetName];
+            document.title = presetName;
+            setFavicon(faviconUrl);
+            
+            showModal('Cloak Applied', `Tab is now cloaked as "${presetName}".`);
+        }
+        
+        // Applies a cloak from the custom input fields
+        function applyCustomCloak() {
+            const title = document.getElementById('custom-title').value;
+            const faviconUrl = document.getElementById('custom-favicon').value;
+            
+            if (!title && !faviconUrl) {
+                showModal('Error', 'Please enter a custom title or favicon URL.');
+                return;
+            }
+            
+            document.title = title || 'StarlightOS';
+            setFavicon(faviconUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>');
+            
+            showModal('Cloak Applied', `Custom cloak has been applied.`);
+        }
+        
         
         // NEW Function: setTheme
         function setTheme(themeName) {
@@ -896,7 +1074,9 @@
             const buttons = document.querySelectorAll('.window-content button');
             buttons.forEach(btn => {
                 const icon = btn.querySelector('i');
-                if (icon) icon.style.display = 'none';
+                if (icon && btn.getAttribute('onclick')?.startsWith('setTheme')) {
+                    icon.style.display = 'none';
+                }
             });
             
             // Add checkmark to the selected button
@@ -1004,9 +1184,10 @@
         }
 
         function initializeDesktopIcons() {
-            // Must create a copy of the values as the object changes when installing/uninstalling
-            Object.values({ ...appConfigs }).forEach(config => {
-                generateDesktopIcon(config);
+            // NEW: Initialize from the appDatabase list
+            appDatabase.forEach(appData => {
+                appConfigs[appData.name] = { ...appData, id: null }; // Add 'id: null' to track runtime state
+                generateDesktopIcon(appConfigs[appData.name]);
             });
         }
 
@@ -1261,7 +1442,7 @@
         }
 
         function closeModal() {
-            const modal = document.getElementById('modal-os');
+            const modal = document.getElementById('os-modal');
             if (modal) {
                 modal.querySelector('div').classList.remove('scale-100');
                 modal.querySelector('div').classList.add('scale-95');
@@ -1271,6 +1452,8 @@
         
         // Initial setup on load
         window.onload = () => {
+             // NEW: Load config from list
+            initializeAppConfigs();
              // Initialize all default app icons as draggable desktop shortcuts
             initializeDesktopIcons();
             // Set the default theme (and hide checkmarks)
