@@ -44,6 +44,12 @@
             --desktop-bg: url('https://placehold.co/1920x1080/1F0057/80D4FF?text=Starlight+Nebula');
         }
 
+        /* --- NEW: Performance Mode - Disables all animations --- */
+        .performance-mode-on * {
+            transition: none !important;
+            animation: none !important;
+        }
+
         /* Utility for better readability on desktop background */
         .text-shadow-md {
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
@@ -90,9 +96,13 @@
             /* Apply Theme Colors */
             border: 1px solid var(--window-border);
             background-color: var(--window-bg);
+            
+            /* --- MODIFIED: Add smooth transitions for open/close/minimize --- */
+            transition: all 0.2s ease-out, opacity 0.15s ease-out, transform 0.15s ease-out;
         }
         
-        .window.hidden {
+        /* --- FIX: Replaced .hidden with .is-hidden --- */
+        .window.is-hidden {
             opacity: 0;
             transform: scale(0.95);
             pointer-events: none; 
@@ -127,7 +137,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.1s;
+            /* --- NEW: Add transitions for click --- */
+            transition: all 0.1s ease;
+        }
+        /* --- NEW: Click animation for window buttons --- */
+        .window-button:active {
+            transform: scale(0.85);
         }
 
         .window-controls .refresh:hover { background-color: #a5b4fc; } /* New hover color */
@@ -180,15 +195,22 @@
             width: 74px; 
             height: 74px;
             padding: 8px;
-            transition: background-color 0.1s;
             touch-action: none; /* Prevents default browser drag behavior */
+            
+            /* --- MODIFIED: Add transitions for icon movement & click --- */
+            transition: left 0.2s ease-out, top 0.2s ease-out, background-color 0.1s, transform 0.1s ease-out;
+        }
+        /* --- NEW: Click animation for desktop icons --- */
+        .desktop-icon-item:active {
+            transform: scale(0.92);
         }
         
         /* Taskbar/Dock Styling for Running Apps */
         .running-app-icon {
             padding: 6px;
             border-radius: 8px;
-            transition: background-color 0.1s, opacity 0.2s;
+            /* --- MODIFIED: Add smooth transitions for active state & click --- */
+            transition: all 0.15s ease;
             position: relative;
             /* Apply Theme Colors */
             color: var(--taskbar-text);
@@ -196,9 +218,24 @@
         .running-app-icon:hover {
             background-color: var(--taskbar-hover);
         }
+        /* --- NEW: Click animation for taskbar icons --- */
+        .running-app-icon:active {
+            transform: scale(0.9);
+        }
         
         .desktop-context-menu {
             z-index: 100; /* Above windows and dock */
+            
+            /* --- MODIFIED: Add smooth transitions for context menus --- */
+            transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+            transform-origin: top left;
+        }
+        
+        /* --- FIX: Replaced .hidden with .is-hidden --- */
+        .desktop-context-menu.is-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
         }
         
         /* Custom styling for form inputs */
@@ -209,10 +246,51 @@
             border: 1px solid var(--window-border);
             background-color: var(--window-bg);
             color: var(--window-text);
+            /* --- NEW: Add transitions for focus --- */
+            transition: all 0.15s ease-out;
         }
         .form-input:focus, .form-select:focus {
             outline: 2px solid var(--starlight-primary);
             border-color: var(--starlight-primary);
+        }
+        
+        /* --- NEW: Generic Button class for inside windows --- */
+        .btn {
+            transition: all 0.15s ease-out;
+        }
+        .btn:hover {
+            opacity: 0.85;
+        }
+        .btn:active {
+            transform: scale(0.97);
+            opacity: 0.75;
+        }
+        
+        /* --- NEW: Modal transitions --- */
+        #os-modal {
+            transition: opacity 0.15s ease-out;
+        }
+        #os-modal > div {
+            transition: all 0.2s ease-out;
+        }
+        /* --- FIX: Replaced .hidden with .is-hidden --- */
+        #os-modal.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #os-modal.is-hidden > div {
+            transform: scale(0.95);
+        }
+        
+        /* --- NEW: Toggle Switch animation --- */
+        .peer:checked ~ div {
+            background-color: var(--starlight-primary) !important;
+        }
+        .peer:checked ~ div::after {
+            transform: translateX(100%);
+        }
+        .peer ~ div {
+            filter: grayscale(0.7);
         }
 
     </style>
@@ -228,7 +306,7 @@
         </div>
         
         <!-- Right-Click Context Menu for Desktop Background -->
-        <div id="context-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu" 
+        <div id="context-menu" class="absolute is-hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu" 
              style="background-color: var(--window-bg); border-color: var(--window-border);">
             <div id="toggle-icons-button" class="context-menu-item" onclick="toggleDesktopIcons()">
                 <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i>
@@ -241,7 +319,7 @@
         </div>
         
         <!-- App Icon Right-Click Menu (Pin/Unpin) -->
-        <div id="icon-right-click-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
+        <div id="icon-right-click-menu" class="absolute is-hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
              style="background-color: var(--window-bg); border-color: var(--window-border);">
             <div class="context-menu-item" onclick="handleIconContextMenuAction('open')">
                 <i data-lucide="play" class="w-4 h-4 mr-2"></i> Open App
@@ -253,7 +331,7 @@
         </div>
 
         <!-- Downloaded App Left-Click Menu (Open/Uninstall) -->
-        <div id="downloaded-app-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
+        <div id="downloaded-app-menu" class="absolute is-hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
              style="background-color: var(--window-bg); border-color: var(--window-border);">
             <div class="context-menu-item" onclick="handleIconContextMenuAction('open')">
                 <i data-lucide="play" class="w-4 h-4 mr-2"></i> Open App
@@ -272,6 +350,11 @@
     <div id="app-bar" class="fixed bottom-0 left-0 right-0 h-14 backdrop-blur-sm shadow-2xl flex items-center justify-center space-x-4 px-4 z-50 transition-colors"
          style="background-color: var(--taskbar-bg); color: var(--taskbar-text);">
         
+        <!-- --- NEW: FPS Counter --- -->
+        <div id="fps-counter" class="is-hidden absolute left-4 text-sm font-mono tracking-wider" style="color: var(--taskbar-text);">
+            -- FPS
+        </div>
+
         <!-- Running Apps Dock (Now displays Pinned Apps too) -->
         <div id="running-apps-dock" class="flex space-x-3">
             <!-- Pinned and running app icons will appear here -->
@@ -291,6 +374,11 @@
         let zIndexCounter = 10;
         let preventClose = false; // For REAL browser tab
         let iconsVisible = true;
+        
+        // --- NEW: FPS Counter variables ---
+        let lastFrameTime = 0;
+        let fpsCounterElement; 
+        let isPerformanceMode = false;
         
         // Drag/Click Separation Variables
         let isDraggingIcon = false;
@@ -317,7 +405,7 @@
         // --- NEW: Add the FAVICONS database object ---
         const FAVICONS = {
             "Home | iCivics": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAV1BMVEVHcEz/ZAD/ZwD/WwD/WwD/YAD/ZAD/WwD/WwD/WwD/WwD/WwD/WwD/WwD/ZgD/WwD/WwD/WwD/aAD/gAD/kQD/kAD/kQD/kQD/kQD/ZQD/kQD/jQD/bwAvM226AAAAHHRSTlMACCEwRhgPhrjT4e6tdjyd+/9a///yfrli/53evbsBzAAAAOVJREFUeAGtkgUSwlAMRL+71u3+18QSHDrWheqbbpQcIcq4EIJL+o2U0MY672yI6ZPx7EoFFavVG0sWCeDAXpmr7zLy6Wnrp7JCpjK6OZMNhvYNQgGmPidKVMq+XhXAmGpgmKPMpV4LAsgM5HDPkMX4bAWkU+KzVZ91FMjgQwDbrv8FwfYCh5+2zFxhNz4SGqbEFCVYSqlzd/kUS1m6fjU5ymcT2gtdbk1Y+q7bsAnYvvlCu3VcxvVybbF9mBJSUAuNfyt1A9zOMLLPYc/bts1vw95fExC9LZi7zoP/Xs0kEpfkAJ0B2VoUsYiyizsAAAAASUVORK5CYII=",
-            "Clever | Portal": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQi3ptQJ9ibYtsUiQ1yNX5abVZvtmG9fwqjNpUqzO6N8qbrYgM:https://resources.finalsite.net/images/f_auto,q_auto/v1689877141/mooreschoolscom/emadd6nvplrnh1vsswjf/Clever-Logo.jpg&s",
+            "Clever | Portal": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQi3ptQJ9ibYtsUiQ1yNX5abVZvtmG9fwqjNpUqzO6N8qbrYgM",
             "Home": "https://ssl.gstatic.com/classroom/favicon.ico",
             "Khan Academy": "https://www.khanacademy.org/favicon.ico",
             "Google Docs": "https://ssl.gstatic.com/docs/doclist/images/mediatype/icon_1_document_x16.png",
@@ -331,8 +419,30 @@
             "Student Home - Zearn":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAYFBMVEVHcExFvdM6utGKxq8/u9I8utFIvtM8utFFvNM+u9JJvdNAu9Jnxdg/u9E9utFIvtQ/u9E8utFxydolutn1z0D+0Cr1z0H1zj/1z0L1z0H1z0H1zj/1z0H31GD1z0H10EovluFDAAAAIHRSTlMA2P8Vrf8v9EuXcci5auP/XGR9wLmh4v9CW5Vod9EfI0NLlVAAAACgSURBVHgBddDFAcRADATBRTMzO/8ojyTzXH9rUeKUVFKLPxllrXUEzrXfPIy+/RVglaQ+1lD91GCNSENxLk5cm34jvKhnP6lvlvMf7zyVHJhh5HzXdS+Yi2eFIjPAPLYQmGMpCUyDx+yVVIisqilkTUt1wCq2HtjANgKb2CZgXcvNc1VV9TAMJ2wfNbvp9tmyK8B1x/5hlThaur4fT/Ek3sqLEwwJ2FthAAAAAElFTkSuQmCC",
             "Pear Assessment": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAY1BMVEVHcEwrOkIsO0I0QkMoN0InNkIiMUEnNUImNUEqOEIwPkI0QkMzQEMxP0IyQEMxP0PI21fL3lfQ5FjO4Vi4ylR2hUphcEVNXEKer1CnuVFqekbU6FmAlTmvwVNbaUdATkQAF0B9mIX1AAAAEHRSTlMApyf621LnZv7HHJjFfLc+PB2r8AAAALxJREFUKJHFkEkWgzAMQwljAg+I7cxhuv8pC3RHwrbV9luS7aL4q/qpHothyqGRVWGxVTXk4GCXZTHiJVVYY6v5rXPumDhb37zGe1PnWbdFgLh1WdiuICWsbY41FuUptE0GcgUXBMVTxjTJW6RZarxtBOdIYm0MXdtoFYDMs7W7UkEFFYj085obKocgHSaw3FGCPFbUIe7ls7R2JMHzYyOXfrDnHgEQo+d9emjJjVPKGZ6EfpcSbSvyf/+dPiDkDIV9PRLKAAAAAElFTkSuQmCC",
             "My Drive - Google Drive":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAB+klEQVR4AWJwL/ChKx68ForXW7SJN1iswYb5GyxaqGqhycrgR+rTAKzUA2hoURwG8Cn3bL/wbNuIz7Y5p9kOY57NMBvZs23bPtt/dW7b4VR94ep3v6OHaJvFJSoaZldQROB+hDJValcFPBj20vB82AsEAYCVyTT1uUykaWitGAQIB1oy22WoKOhKQMCCMKa0dLypYN9dTs7HcMvg5YCAHQKAzLmwpwpYGbORBHH2LAfMY4G4JdmOaJkvBQnsMQ+DHAl5MTSeqjaMASaarvZ00SB8UATCyp1OVzMWgfBDiwLhY7J2+Nn5LScyVCkUfkoI3nLqWivAcB7j52HYSISMEJz9WIwEyyE/AAtEBJLbRLoNiBxigIcVgDO08AwFwnkpwfx4Sx1aSFrmLwAvRDz+BBtaFB6Gg9txA9sEg6d9NLNO+/5HvFz0sXXardmy567d4CFW4F5V1BuXiUgVNBa5jpdEBdz2vTRy2/cyxMtduyFpTjtMotobD1D75Yvs3LjopYDwh9v/5CNWrtsOSjGc/8bFqP/mHtRx7zyVodP7tisgZMeffB8SO6xfLYeIlllvTSkM2jH34UraQeB5VkvexoeWWsttR7bEaPu9Cz95IEZbAVw8wm461+7uuXrp4Q0L6LxxS/NKQQ+t2HpYKEKQPMhXkpkNqoYwXTEA+kphQitc/vYAAAAASUVORK5CYII=",
-            "Google Slides":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAaVBMVEX0tAD///8AAAD75ajzqwDzrQD52Iv//fb4twDxsgD7uQDprAAiGQDzsABkSgD/vQAZEgCugQCVbgDdowAqIAAmHADKlQD3y1vAjgC7iQCccwAUDwBOOgCNaAAzJQDhpwBrTwBdRAANCgDVPr2xAAACrUlEQVR4nO3c23KbMBCAYVVtEiEIBws72KD48P4PWXBKnMRJp06HYdn5vzvf7T9ac7jB2I/a53zVhMQsTRK2u7xur3rM+59ZF/eF927ucb/FOV+E2NV/KVznVeLnnvP/OJ9sD/VXhccqXXjfmUur/PRZYRmDhr6BD7G8LsyadJn/vs+4tMk+FmYbPX0Dv8neF2oL7I9xTDRKAy+J58Ky0XKNecs15Vh4iunc00wijWNhHvTt6MCF40thXWnc0YGv1ufCg84dHaT5UFhvde7owFdZX9gt70Xp3yVdXxi1/gsHPlrTKr2Q/rFvTV3MPcSkimeTa17Sfk1zs1O9pMavjOJ7xcA1Jsw9w8SC0Xw3HGjvAwAAAAAAAAAAAAAAy/D4a1kebw58+rksT7cm3t3/WJb7u5sLH+ae+SYPFFIoHoUUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF83ymce+Yb3Vyo/zvC+r8FDQAAAAAAAAAAAAAAMIFk7gEmlpgw9wgTC6Zxc88wKbc1Kz/3EJNyO5PrLvS5eS7mHmJSRW3a/dxDTMmF1tioeU19tMZ2mu+ISdcXZpXeQ3Tbui+0eTr3IJNJD3YoXKs9RF/V50J7DDqfa1zI7UuhjTr3NI2nsbBU+XDqm9KOhTbb6Et0m8xeChUmjoFjYZ+o64L6GvhaaLMm1XOMLm3GwEuhLWPQcow+xNJeF9pTXqUaGn1aHS9VbwutrQ/bxC97V51PqnxtvyrsG7sYCu+WWem8L/axy94nfSjstXW+24blvVIloVnlz+1Vz29MQXJQo6ciNgAAAABJRU5ErkJggg=="
+            "Google Slides":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAaVBMVEX0tAD///8AAAD75ajzqwDzrQD52Iv//fb4twDxsgD7uQDprAAiGQDzsABkSgD/vQAZEgCugQCVbgDdowAqIAAmHADKlQD3y1vAjgC7iQCccwAUDwBOOgCNaAAzJQDhpwBrTwBdRAANCgDVPr2xAAACrUlEQVR4nO3c23KbMBCAYVVtEiEIBws72KD48P4PWXBKnMRJp06HYdn5vzvf7T9ac7jB2I/a53zVhMQsTRK2u7xur3rM+59ZF/eF927ucb/FOV+E2NV/KVznVeLnnvP/OJ9sD/VXhccqXXjfmUur/PRZYRmDhr6BD7G8LsyadJn/vs+4tMk+FmYbPX0Dv8neF2oL7I9xTDRKAy+J58Ky0XKNecs15Vh4iunc00wijWNhHvTt6MCF40thXWnc0YGv1ufCg84dHaT5UFhvde7owFdZX9gt70Xp3yVdXxi1/gsHPlrTKr2Q/rFvTV3MPcSkimeTa17Sfk1zs1O9pMavjOJ7xcA1Jsw9w8SC0Xw3HGjvAwAAAAAAAAAAAAAAy/D4a1kebw58+rksT7cm3t3/WJb7u5sLH+ae+SYPFFIoHoUUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF83ymce+Yb3Vyo/zvC+r8FDQAAAAAAAAAAAAAAMIFk7gEmlpgw9w8SC0Xw3HGjvAwAAAAAAAAAAAAAAy/D4a1kebw58+rksT7cm3t3/WJb7u5sLH+ae+SYPFFIoHoUUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF8FFIoH4UUykchhfJRSKF83ymce+Yb3Vyo/zvC+r8FDQAAAAAAAAAAAAAAMIFk7gEmlpgw9wgTC6Zxc88wKbc1Kz/3EJNyO5PrLvS5eS7mHmJSRW3a/dxDTMmF1tioeU19tMZ2mu+ISdcXZpXeQ3Tbui+0eTr3IJNJD3YoXKs9RF/V50J7DDqfa1zI7UuhjTr3NI2nsbBU+XDqm9KOhTbb6Et0m8xeChUmjoFjYZ+o64L6GvhaaLMm1XOMLm3GwEuhLWPQcow+xNJeF9pTXqUaGn1aHS9VbwutrQ/bxC97V51PqnxtvyrsG7sYCu+WWem8L/axy94nfSjstXW+24blvVIloVnlz+1Vz29MQXJQo6ciNgAAAABJRU5ErkJggg=="
         };
+
+        // --- NEW: A clean list for populating the dropdown ---
+        const CLOAK_PRESETS = [
+            { value: "", display: "🎓 Select Preset..." },
+            { value: "Clever | Portal", display: "Clever | Portal" },
+            { value: "Khan Academy", display: "Khan Academy" },
+            { value: "Outlook Mail", display: "Outlook Mail" },
+            { value: "Calculator", display: "Calculator" },
+            { value: "Activate Learning Digital Platform - Home", display: "Activate Learning" },
+            { value: "Gallopade: Educational Products, Social Studies Curriculum, Reading, Common Core", display: "Gallopade" },
+            { value: "Classes | IL Classroom", display: "IL Classroom" },
+            { value: "Student Home - Zearn", display: "Zearn" },
+            { value: "Home | iCivics", display: "iCivics" },
+            { value: "Pear Assessment", display: "Pear Assessment" },
+            { value: "My Drive - Google Drive", display: "Google Drive" },
+            { value: "Google Docs", display: "Google Docs" },
+            { value: "Google Slides", display: "Google Slides" },
+            { value: "Home", display: "Google Classroom" }, // "Home" is the key for Classroom favicon
+            { value: "Google", display: "Google" },
+            { value: "Google Classroom - Google Search", display: "Fake Google search" },
+            { value: "custom", display: "Custom..." }
+        ];
 
 
         // --- REAL browser tab close prevention ---
@@ -355,9 +465,21 @@
         setInterval(updateTime, 1000);
         updateTime(); // Initial call
 
+        // --- NEW: FPS Loop ---
+        function updateFPS(timestamp) {
+            if (fpsCounterElement && !isPerformanceMode) { // Only update if not in performance mode (to save resources)
+                const deltaTime = timestamp - lastFrameTime;
+                lastFrameTime = timestamp;
+                const fps = Math.round(1000 / deltaTime);
+                fpsCounterElement.textContent = `${fps} FPS`;
+            }
+            // Keep the loop running
+            requestAnimationFrame(updateFPS);
+        }
+
         // 2. Window Manager Helper
         function getWindowTemplate(id, title, initialWidth = '600px', initialHeight = '400px') {
-            const isIframeApp = ['Search', 'Games', 'Example App'].includes(title);
+            const isIframeApp = ['Search', 'Games', 'Chat'].includes(title);
             const contentPaddingClass = isIframeApp ? 'p-0' : ''; // Use p-0 for iframes
             
             return `
@@ -488,7 +610,7 @@
         function minimizeWindow(id) {
             const win = document.getElementById(id);
             if (win) {
-                win.classList.add('hidden');
+                win.classList.add('is-hidden');
                 updateRunningAppsDock();
             }
         }
@@ -520,7 +642,7 @@
         function focusWindow(id) {
             const win = document.getElementById(id);
             if (!win) return;
-            win.classList.remove('hidden'); // Restore if minimized
+            win.classList.remove('is-hidden'); // Restore if minimized
             
             // Update Z-index
             zIndexCounter++;
@@ -708,7 +830,7 @@
             if (windowId && document.getElementById(windowId)) {
                 const existingWin = document.getElementById(windowId);
                 
-                if (existingWin.classList.contains('hidden')) {
+                if (existingWin.classList.contains('is-hidden')) { // --- FIX: Use is-hidden ---
                     focusWindow(windowId);
                 } else {
                     minimizeWindow(windowId);
@@ -774,16 +896,17 @@
         const storeAppDatabase = [
             {
                 name: 'Games',
-                icon: 'rocket', // User's requested icon
-                url: 'https://www.coolmathgames.com/', // User's requested URL
+                icon: 'gamepad-2', // User's requested icon
+                url: 'https://unblockedgames1024.gitlab.io/', // User's requested URL
                 description: 'A collection of fun browser games.'
             },
             {
-                name: 'Example App',
-                icon: 'cpu', 
-                url: 'https://example.com/',
-                description: 'A simple external browser simulation.'
-            }
+                name: 'Chat',
+                icon: 'message-square', // User's requested icon
+                url: 'https://deadsimplechat.com/xlR-fRK3h', // User's requested URL
+                description: 'Chat with the starlight games community!'
+            },
+            
             // Add more apps here!
             // { name: 'Drawing App', icon: 'edit-3', url: 'https://some-drawing-app.com', description: 'A simple sketchpad.' }
         ];
@@ -818,7 +941,7 @@
                                     <div class="text-sm" style="color: var(--window-secondary-text);">${app.description}</div>
                                 </div>
                             </div>
-                            <button id="download-btn-${appName.replace(/\s/g, '-')}" ${buttonDisabled} ${buttonClick} class="px-4 py-2 rounded-full transition duration-150 shadow-md ${buttonClasses}">
+                            <button id="download-btn-${appName.replace(/\s/g, '-')}" ${buttonDisabled} ${buttonClick} class="btn px-4 py-2 rounded-full transition duration-150 shadow-md ${buttonClasses}">
                                 ${buttonText}
                             </button>
                         </div>
@@ -842,16 +965,16 @@
                             <div class="border-b pb-4" style="border-color: var(--window-border);">
                                 <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Color Theme</h3>
                                 <div class="flex flex-wrap gap-3">
-                                    <button onclick="setTheme('blue')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                    <button onclick="setTheme('blue')" class="btn flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
                                         <i data-lucide="check" class="w-4 h-4"></i><span>Starlight Blue</span>
                                     </button>
-                                    <button onclick="setTheme('red')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white">
+                                    <button onclick="setTheme('red')" class="btn flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white">
                                         <i data-lucide="check" class="w-4 h-4"></i><span>Ruby Red</span>
                                     </button>
-                                    <button onclick="setTheme('green')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <button onclick="setTheme('green')" class="btn flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
                                         <i data-lucide="check" class="w-4 h-4"></i><span>Emerald Green</span>
                                     </button>
-                                    <button onclick="setTheme('dark')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-900 text-white">
+                                    <button onclick="setTheme('dark')" class="btn flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-900 text-white">
                                         <i data-lucide="check" class="w-4 h-4"></i><span>Starlight Dark</span>
                                     </button>
                                 </div>
@@ -867,7 +990,7 @@
                                             <!-- Options will be populated by JS -->
                                         </select>
                                     </div>
-                                    <div id="custom-cloak-inputs" class="hidden space-y-3">
+                                    <div id="custom-cloak-inputs" class="is-hidden space-y-3">
                                         <div>
                                             <label for="custom-title" class="block text-sm font-medium mb-1" style="color: var(--window-secondary-text);">Custom Title</label>
                                             <input type="text" id="custom-title" placeholder="e.g., Google Docs" class="form-input">
@@ -876,7 +999,7 @@
                                             <label for="custom-favicon" class="block text-sm font-medium mb-1" style="color: var(--window-secondary-text);">Custom Favicon URL</label>
                                             <input type="text" id="custom-favicon" placeholder="e.g., https://google.com/favicon.ico" class="form-input">
                                         </div>
-                                        <button onclick="applyCustomCloak()" class="w-full px-4 py-2 rounded-lg text-white" style="background-color: var(--starlight-primary); opacity: 0.8; hover:opacity: 1;">
+                                        <button onclick="applyCustomCloak()" class="btn w-full px-4 py-2 rounded-lg text-white" style="background-color: var(--starlight-primary); opacity: 0.8; hover:opacity: 1;">
                                             Apply Custom Cloak
                                         </button>
                                     </div>
@@ -896,6 +1019,33 @@
                                 </div>
                                 <p class="text-xs mt-1" style="color: var(--window-secondary-text);">If enabled, a warning will appear when trying to close the actual browser tab.</p>
                             </div>
+
+                            <!-- --- NEW: Performance Section --- -->
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Performance</h3>
+                                <!-- FPS Toggle -->
+                                <div class="flex items-center justify-between p-4 rounded-lg" style="background-color: var(--window-row-bg);">
+                                    <label for="show-fps-toggle" class="font-medium" style="color: var(--window-text);">Show FPS Counter</label>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="show-fps-toggle" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                                             style="background-color: var(--starlight-primary); filter: grayscale(0.7);"></div>
+                                    </label>
+                                </div>
+                                <p class="text-xs mt-1" style="color: var(--window-secondary-text);">Displays the current screen refresh rate in the taskbar.</p>
+                                
+                                <!-- Performance Mode Toggle -->
+                                <div class="flex items-center justify-between p-4 rounded-lg mt-4" style="background-color: var(--window-row-bg);">
+                                    <label for="performance-mode-toggle" class="font-medium" style="color: var(--window-text);">Performance Mode</label>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="performance-mode-toggle" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                                             style="background-color: var(--starlight-primary); filter: grayscale(0.7);"></div>
+                                    </label>
+                                </div>
+                                <p class="text-xs mt-1" style="color: var(--window-secondary-text);">Disables all animations and transitions for a faster experience.</p>
+                            </div>
+
                         </div>
                     `;
                 default:
@@ -918,7 +1068,7 @@
 
             button.disabled = true;
             button.textContent = 'Downloading... 0%';
-            button.className = 'px-4 py-2 rounded-full transition duration-150 shadow-md bg-gray-400 text-white cursor-not-allowed';
+            button.className = 'btn px-4 py-2 rounded-full transition duration-150 shadow-md bg-gray-400 text-white cursor-not-allowed';
 
             let progress = 0;
             const interval = setInterval(() => {
@@ -948,7 +1098,7 @@
                     // 2. Visual updates for installed state
                     button.textContent = 'Installed';
                     // Use theme-agnostic green and dark text
-                    button.className = 'px-4 py-2 rounded-full transition duration-150 shadow-md bg-green-500 text-gray-800 cursor-not-allowed';
+                    button.className = 'btn px-4 py-2 rounded-full transition duration-150 shadow-md bg-green-500 text-gray-800 cursor-not-allowed';
                     
                     // 3. Open the newly downloaded app
                     openApp(appName);
@@ -997,30 +1147,44 @@
                 preventClose = e.target.checked;
             });
             
+            // --- NEW: Setup FPS Toggle ---
+            document.getElementById('show-fps-toggle').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    fpsCounterElement.classList.remove('is-hidden');
+                } else {
+                    fpsCounterElement.classList.add('is-hidden');
+                }
+            });
+
+            // --- NEW: Setup Performance Mode Toggle ---
+            document.getElementById('performance-mode-toggle').addEventListener('change', (e) => {
+                isPerformanceMode = e.target.checked;
+                document.body.classList.toggle('performance-mode-on', isPerformanceMode);
+            });
+
             // --- NEW: Setup Cloaking Dropdown ---
             const cloakSelect = document.getElementById('cloak-select');
             const customInputs = document.getElementById('custom-cloak-inputs');
             
             // 1. Populate Dropdown
-            cloakSelect.innerHTML = '<option value="">Select a preset...</option>'; // Default
-            for (const title in FAVICONS) {
+            cloakSelect.innerHTML = ''; // Clear it
+            CLOAK_PRESETS.forEach(preset => {
                 const option = document.createElement('option');
-                option.value = title;
-                option.textContent = title;
+                option.value = preset.value;
+                option.textContent = preset.display;
                 cloakSelect.appendChild(option);
-            }
-            cloakSelect.innerHTML += '<option value="custom">Custom...</option>'; // Add custom option
+            });
             
             // 2. Add listener
             cloakSelect.addEventListener('change', (e) => {
                 const value = e.target.value;
                 if (value === 'custom') {
-                    customInputs.classList.remove('hidden');
+                    customInputs.classList.remove('is-hidden');
                 } else if (value) {
-                    customInputs.classList.add('hidden');
+                    customInputs.classList.add('is-hidden');
                     applyCloak(value); // Apply preset immediately
                 } else {
-                    customInputs.classList.add('hidden');
+                    customInputs.classList.add('is-hidden');
                 }
             });
         }
@@ -1297,9 +1461,11 @@
         // --- Context Menu Management ---
         
         function hideAllContextMenus() {
-            desktopContextMenu.classList.add('hidden');
-            iconRightClickMenu.classList.add('hidden');
-            downloadedAppMenu.classList.add('hidden');
+            // --- FIX: Use transition-friendly class ---
+            document.querySelectorAll('.desktop-context-menu').forEach(menu => {
+                menu.classList.add('is-hidden');
+            });
+            
             contextMenuTargetApp = null;
         }
 
@@ -1338,7 +1504,8 @@
             // Position the menu
             menuElement.style.left = `${x}px`;
             menuElement.style.top = `${y}px`;
-            menuElement.classList.remove('hidden');
+            // This line is what makes the transition work
+            menuElement.classList.remove('is-hidden');
         }
 
         function handleIconContextMenuAction(action) {
@@ -1368,7 +1535,7 @@
 
         // Desktop Background Context Menu (separate logic to avoid conflict)
         desktop.addEventListener('contextmenu', (e) => {
-            if (e.target.closest('.window') || e.target.closest('.desktop-icon-item')) {
+            if (e.target.closest('.window') || e.g.target.closest('.desktop-icon-item')) {
                 hideAllContextMenus();
                 return;
             }
@@ -1387,7 +1554,8 @@
             
             desktopContextMenu.style.left = `${x}px`;
             desktopContextMenu.style.top = `${y}px`;
-            desktopContextMenu.classList.remove('hidden');
+            // This line is what makes the transition work
+            desktopContextMenu.classList.remove('is-hidden');
         });
         
         function toggleDesktopIcons() {
@@ -1395,7 +1563,7 @@
             const action = iconsVisible ? 'remove' : 'add';
             
             document.querySelectorAll('.desktop-icon-item').forEach(icon => {
-                icon.classList[action]('hidden');
+                icon.classList[action]('hidden'); // .hidden is OK here, no transition needed
             });
             hideAllContextMenus();
         }
@@ -1407,12 +1575,13 @@
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = modalId;
-                modal.className = 'fixed inset-0 bg-black/50 z-[100] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none';
+                // --- NEW: Add is-hidden class for transition ---
+                modal.className = 'fixed inset-0 bg-black/50 z-[100] flex items-center justify-center transition-opacity duration-300 is-hidden';
                 document.body.appendChild(modal);
             }
             
             modal.innerHTML = `
-                <div class="rounded-xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-300"
+                <div class="rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-transform duration-300"
                      style="background-color: var(--window-bg); color: var(--window-text);">
                     <!-- Modal Header with Close Button (X) -->
                     <div class="flex justify-between items-center mb-4 border-b pb-2" style="border-color: var(--window-border);">
@@ -1426,7 +1595,7 @@
                     <p class="mb-6">${message}</p>
                     
                     <!-- Primary button with high-contrast support -->
-                    <button onclick="closeModal()" class="w-full py-2 rounded-lg transition duration-150 shadow-md text-white"
+                    <button onclick="closeModal()" class="btn w-full py-2 rounded-lg transition duration-150 shadow-md text-white"
                         style="background-color: var(--starlight-primary);">
                         OK
                     </button>
@@ -1434,9 +1603,8 @@
             `;
             
             setTimeout(() => {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-95');
-                modal.querySelector('div').classList.add('scale-100');
+                // --- MODIFIED: Remove is-hidden to trigger transition ---
+                modal.classList.remove('is-hidden');
                 lucide.createIcons(); // Render the new 'x' icon
             }, 10);
         }
@@ -1444,9 +1612,8 @@
         function closeModal() {
             const modal = document.getElementById('os-modal');
             if (modal) {
-                modal.querySelector('div').classList.remove('scale-100');
-                modal.querySelector('div').classList.add('scale-95');
-                modal.classList.add('opacity-0', 'pointer-events-none');
+                // --- MODIFIED: Add is-hidden to trigger transition ---
+                modal.classList.add('is-hidden');
             }
         }
         
@@ -1458,6 +1625,11 @@
             initializeDesktopIcons();
             // Set the default theme (and hide checkmarks)
             setTheme('blue');
+
+            // --- NEW: Assign FPS element and start loop ---
+            fpsCounterElement = document.getElementById('fps-counter');
+            requestAnimationFrame(updateFPS);
+
             // Renders all existing lucide icons
             lucide.createIcons(); 
         };
