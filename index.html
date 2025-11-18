@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarlightOS</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for a modern look -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        // NOTE: No tailwind.config is needed since we removed dark: prefixes
+    </script>
+    
+    <style>
+        /* Define Custom Colors and Variables */
+        :root {
+            /* This is the default "Starlight Blue" (Light) theme
+              All elements will pull from these variables.
+            */
+            
+            /* Accent Color */
+            --starlight-primary: #007BFF;
+            --starlight-primary-hover: #0069D9;
+
+            /* Window Header */
+            --header-bg: #007BFF;
+            --header-text: #FFFFFF;
+
+            /* Window Content */
+            --window-bg: #FFFFFF;
+            --window-text: #1F2937; /* dark text */
+            --window-secondary-text: #6B7280; /* gray text */
+            --window-border: #E5E7EB; /* light border */
+            --window-row-bg: #F9FAFB; /* light row bg */
+            
+            /* Taskbar */
+            --taskbar-bg: #ffffff;
+            --taskbar-text: #1F2937; /* dark text */
+            --taskbar-hover: #F3F4F6; /* light hover */
+            
+            /* Desktop */
+            --desktop-bg: url('https://placehold.co/1920x1080/1F0057/80D4FF?text=Starlight+Nebula');
+        }
+
+        /* Utility for better readability on desktop background */
+        .text-shadow-md {
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Essential OS Layout */
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: #E5E7EB; /* Fallback */
+        }
+
+        /* Desktop Container */
+        #desktop {
+            height: calc(100vh - 56px); /* Full height minus taskbar */
+            width: 100%;
+            padding-bottom: 56px; /* Space for the fixed taskbar */
+            
+            /* Wallpaper Styling */
+            background-image: var(--desktop-bg);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            
+            display: block; 
+            padding: 16px; 
+        }
+
+        /* Application Window Styles */
+        .window {
+            position: absolute;
+            min-width: 300px;
+            min-height: 200px;
+            max-width: 100%;
+            max-height: calc(100vh - 56px); 
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+            
+            /* Apply Theme Colors */
+            border: 1px solid var(--window-border);
+            background-color: var(--window-bg);
+        }
+        
+        .window.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none; 
+        }
+
+        .window-header {
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            font-weight: 600;
+            
+            /* Apply Theme Colors */
+            background-color: var(--header-bg);
+            color: var(--header-text);
+        }
+        
+        /* New: Remove grab cursor when maximized */
+        .window[data-maximized="true"] .window-header {
+            cursor: default;
+        }
+
+        .window-button {
+            padding: 4px;
+            border-radius: 9999px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.1s;
+        }
+
+        .window-controls .minimize:hover { background-color: #ffe082; }
+        .window-controls .maximize:hover { background-color: #90EE90; }
+        .window-controls .close:hover { background-color: #e57373; }
+
+        .window-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            /* Apply Theme Colors */
+            background-color: var(--window-bg);
+            color: var(--window-text); 
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        /* Context Menu Item Styling */
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.875rem; /* text-sm */
+            /* Apply Theme Colors */
+            color: var(--window-text);
+            transition: background-color 0.15s;
+            white-space: nowrap;
+        }
+        
+        .context-menu-item:hover {
+            background-color: var(--window-row-bg); /* Light mode hover */
+        }
+        
+        /* Resizing Cursors */
+        .n-resize { cursor: n-resize; }
+        .s-resize { cursor: s-resize; }
+        .e-resize { cursor: e-resize; }
+        .w-resize { cursor: w-resize; }
+        .ne-resize { cursor: ne-resize; }
+        .nw-resize { cursor: nw-resize; }
+        .se-resize { cursor: se-resize; }
+        .sw-resize { cursor: sw-resize; }
+
+        /* Desktop Icon Styling */
+        .desktop-icon-item {
+            position: absolute;
+            width: 74px; 
+            height: 74px;
+            padding: 8px;
+            transition: background-color 0.1s;
+            touch-action: none; /* Prevents default browser drag behavior */
+        }
+        
+        /* Taskbar/Dock Styling for Running Apps */
+        .running-app-icon {
+            padding: 6px;
+            border-radius: 8px;
+            transition: background-color 0.1s, opacity 0.2s;
+            position: relative;
+            /* Apply Theme Colors */
+            color: var(--taskbar-text);
+        }
+        .running-app-icon:hover {
+            background-color: var(--taskbar-hover);
+        }
+        
+        .desktop-context-menu {
+            z-index: 100; /* Above windows and dock */
+        }
+
+    </style>
+</head>
+
+<body class="" oncontextmenu="return false;">
+
+    <div id="desktop" class="relative">
+        
+        <!-- Desktop Shortcuts Area (Container for draggable icons) -->
+        <div id="desktop-shortcuts" class="absolute inset-0 top-4 left-4 right-4 bottom-4">
+            <!-- Icons are now generated dynamically -->
+        </div>
+        
+        <!-- Right-Click Context Menu for Desktop Background -->
+        <div id="context-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu" 
+             style="background-color: var(--window-bg); border-color: var(--window-border);">
+            <div id="toggle-icons-button" class="context-menu-item" onclick="toggleDesktopIcons()">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i>
+                <span id="toggle-icons-text">Hide Desktop Icons</span>
+            </div>
+            <div class="context-menu-item" onclick="openApp('Settings')">
+                <i data-lucide="settings" class="w-4 h-4 mr-2"></i>
+                Settings
+            </div>
+        </div>
+        
+        <!-- App Icon Right-Click Menu (Pin/Unpin) -->
+        <div id="icon-right-click-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
+             style="background-color: var(--window-bg); border-color: var(--window-border);">
+            <div class="context-menu-item" onclick="handleIconContextMenuAction('open')">
+                <i data-lucide="play" class="w-4 h-4 mr-2"></i> Open App
+            </div>
+            <hr class="my-1" style="border-color: var(--window-border);">
+            <div id="pin-unpin-option" class="context-menu-item" onclick="handleIconContextMenuAction('pin')">
+                <i data-lucide="pin" class="w-4 h-4 mr-2"></i> Pin to Taskbar
+            </div>
+        </div>
+
+        <!-- Downloaded App Left-Click Menu (Open/Uninstall) -->
+        <div id="downloaded-app-menu" class="absolute hidden bg-white shadow-2xl rounded-xl border p-1 desktop-context-menu"
+             style="background-color: var(--window-bg); border-color: var(--window-border);">
+            <div class="context-menu-item" onclick="handleIconContextMenuAction('open')">
+                <i data-lucide="play" class="w-4 h-4 mr-2"></i> Open App
+            </div>
+            <hr class="my-1" style="border-color: var(--window-border);">
+            <div class="context-menu-item text-red-600" onclick="handleIconContextMenuAction('uninstall')">
+                <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> Uninstall
+            </div>
+        </div>
+        
+
+        <!-- Application Windows will be injected here -->
+    </div>
+
+    <!-- App Bar (Taskbar) - Dynamic Background for Light/Dark Mode -->
+    <div id="app-bar" class="fixed bottom-0 left-0 right-0 h-14 backdrop-blur-sm shadow-2xl flex items-center justify-center space-x-4 px-4 z-50 transition-colors"
+         style="background-color: var(--taskbar-bg); color: var(--taskbar-text);">
+        
+        <!-- Running Apps Dock (Now displays Pinned Apps too) -->
+        <div id="running-apps-dock" class="flex space-x-3">
+            <!-- Pinned and running app icons will appear here -->
+        </div>
+
+        <!-- System Tray (Time) - Color adjusted for light/dark contrast -->
+        <div class="absolute right-4 text-sm font-mono tracking-wider transition-colors" style="color: var(--taskbar-text);">
+            <span id="time-display">00:00:00</span>
+        </div>
+    </div>
+
+    <script>
+        const desktop = document.getElementById('desktop');
+        const desktopIconsContainer = document.getElementById('desktop-shortcuts');
+        const runningAppsDock = document.getElementById('running-apps-dock');
+        const appConfigs = {};
+        let zIndexCounter = 10;
+        let preventClose = false; // For REAL browser tab
+        let iconsVisible = true;
+        
+        // Drag/Click Separation Variables
+        let isDraggingIcon = false;
+        let dragOccurred = false;
+        let startX = 0;
+        let startY = 0;
+        let contextMenuTargetApp = null; 
+
+        // Resizing constants
+        const BORDER_SIZE = 8;
+        const MIN_WIDTH = 300;
+        const MIN_HEIGHT = 200;
+        
+        // Grid constant for desktop icons
+        const GRID_SIZE = 90; 
+        const ICON_PADDING = 16; 
+
+        // Context Menu Elements
+        const desktopContextMenu = document.getElementById('context-menu');
+        const iconRightClickMenu = document.getElementById('icon-right-click-menu');
+        const downloadedAppMenu = document.getElementById('downloaded-app-menu');
+        const pinUnpinOption = document.getElementById('pin-unpin-option');
+
+
+        // --- REAL browser tab close prevention ---
+        window.addEventListener('beforeunload', (e) => {
+            if (preventClose) {
+                e.preventDefault();
+                e.returnValue = 'Changes you made may not be saved.';
+            }
+        });
+
+
+        // --- Core OS Functions ---
+
+        // 1. Time Display
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('time-display').textContent = timeString;
+        }
+        setInterval(updateTime, 1000);
+        updateTime(); // Initial call
+
+        // 2. Window Manager Helper
+        function getWindowTemplate(id, title, initialWidth = '600px', initialHeight = '400px') {
+            const isIframeApp = ['Search', 'Example App'].includes(title);
+            const contentPaddingClass = isIframeApp ? 'p-0' : ''; // Use p-0 for iframes
+            
+            return `
+                <div id="${id}" class="window" 
+                     style="width: ${initialWidth}; height: ${initialHeight}; top: 50px; left: 50px;">
+                    <div class="window-header">
+                        <span class="flex items-center space-x-2">
+                            <i data-lucide="${appConfigs[title].icon}" class="w-4 h-4 mr-1"></i>
+                            <span>${title}</span>
+                        </span>
+                        <div class="window-controls flex space-x-2">
+                            <button class="window-button minimize" onclick="minimizeWindow('${id}')" title="Minimize">
+                                <i data-lucide="minus" class="w-4 h-4 text-yellow-400"></i>
+                            </button>
+                            <button class="window-button maximize" onclick="maximizeWindow('${id}')" title="Maximize">
+                                <i id="maximize-icon-${id}" data-lucide="square" class="w-4 h-4 text-green-500"></i>
+                            </button>
+                            <button class="window-button close" onclick="closeWindow('${id}')" title="Close">
+                                <i data-lucide="x" class="w-4 h-4 text-red-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="window-content ${contentPaddingClass}">
+                        <!-- Content will be injected here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. Update Running Apps Dock
+        function updateRunningAppsDock() {
+            runningAppsDock.innerHTML = ''; // Clear the dock
+
+            const allDockApps = Object.values(appConfigs)
+                .filter(config => config.isPinned || (config.id && document.getElementById(config.id)))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            let focusedWindowId = null;
+            const focusedWin = document.querySelector(`.window[style*="z-index: ${zIndexCounter}"]`); 
+            if (focusedWin) {
+                focusedWindowId = focusedWin.id;
+            }
+
+            allDockApps.forEach(config => {
+                const appName = config.name;
+                const windowId = config.id;
+                const win = windowId ? document.getElementById(windowId) : null;
+                
+                const isRunning = !!win;
+                const isActive = isRunning && windowId === focusedWindowId && !win.classList.contains('hidden');
+
+                const appIcon = document.createElement('button');
+                const iconId = `dock-icon-${appName.replace(/\s/g, '-')}`;
+                
+                appIcon.className = 'running-app-icon relative transition duration-150';
+                appIcon.id = iconId;
+                appIcon.setAttribute('title', appName + (config.isPinned ? ' (Pinned)' : '') + (isRunning ? ' (Running)' : ''));
+                
+                appIcon.onclick = () => openApp(appName);
+
+                appIcon.innerHTML = `
+                    <i data-lucide="${config.icon}" class="w-6 h-6 pointer-events-none"></i>
+                    ${isRunning ? '<span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full" style="background-color: var(--starlight-primary);"></span>' : ''}
+                `;
+                
+                // Active (focused) styling
+                if (isActive) {
+                    appIcon.style.borderBottom = '3px solid var(--starlight-primary)';
+                    appIcon.style.backgroundColor = 'rgba(128, 128, 128, 0.15)'; // Use a neutral color
+                } else {
+                    appIcon.style.borderBottom = '3px solid transparent';
+                    appIcon.style.backgroundColor = 'transparent';
+                }
+                
+                runningAppsDock.appendChild(appIcon);
+            });
+
+            lucide.createIcons();
+        }
+
+        // 4. Window State Functions 
+        function maximizeWindow(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            
+            const isMaximized = win.getAttribute('data-maximized') === 'true';
+            const maximizeBtnIcon = document.getElementById(`maximize-icon-${id}`);
+            
+            if (isMaximized) {
+                // Restore
+                const bounds = JSON.parse(win.getAttribute('data-original-bounds'));
+                win.style.width = bounds.width;
+                win.style.height = bounds.height;
+                win.style.left = bounds.left;
+                win.style.top = bounds.top;
+                win.setAttribute('data-maximized', 'false');
+                maximizeBtnIcon.setAttribute('data-lucide', 'square'); 
+                win.classList.remove('no-resize'); 
+            } else {
+                // Maximize
+                // 1. Store current pixel bounds before applying maximize class
+                const currentBounds = {
+                    width: win.style.width,
+                    height: win.style.height,
+                    left: win.style.left,
+                    top: win.style.top,
+                };
+                win.setAttribute('data-original-bounds', JSON.stringify(currentBounds));
+
+                // 2. Maximize to full desktop area
+                win.style.width = '100%';
+                win.style.height = 'calc(100vh - 56px)'; 
+                win.style.left = '0px';
+                win.style.top = '0px';
+                win.setAttribute('data-maximized', 'true');
+                maximizeBtnIcon.setAttribute('data-lucide', 'copy-check'); 
+                win.classList.add('no-resize'); 
+            }
+            
+            lucide.createIcons();
+        }
+
+        function minimizeWindow(id) {
+            const win = document.getElementById(id);
+            if (win) {
+                win.classList.add('hidden');
+                updateRunningAppsDock();
+            }
+        }
+
+        function closeWindow(id) {
+            const win = document.getElementById(id);
+            if (win) {
+                const appName = win.getAttribute('data-app-name');
+                win.remove();
+                appConfigs[appName].id = null; // Clear the running ID
+                updateRunningAppsDock(); // Update dock
+            }
+        }
+        
+        function focusWindow(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            win.classList.remove('hidden'); // Restore if minimized
+            
+            // Update Z-index
+            zIndexCounter++;
+            win.style.zIndex = zIndexCounter;
+            
+            // Update dock active status
+            updateRunningAppsDock();
+        }
+
+
+        // 5. Window Interaction (Dragging & Resizing) - UPDATED with Maximize check
+        function enableWindowInteractions(windowElement) {
+            const header = windowElement.querySelector('.window-header');
+            let isDragging = false;
+            let isResizing = false;
+            let offset = { x: 0, y: 0 };
+            
+            let startX, startY, startWidth, startHeight, startLeft, startTop; 
+            let resizeDir = '';
+            
+            // --- FIX: Add mousedown listeners to buttons to stop propagation ---
+            const buttons = header.querySelectorAll('.window-button');
+            buttons.forEach(button => {
+                button.addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); // Stop this click from triggering the header's drag listener
+                });
+            });
+            // --- End Fix ---
+            
+            windowElement.addEventListener('mousedown', () => focusWindow(windowElement.id));
+            windowElement.addEventListener('touchstart', () => focusWindow(windowElement.id));
+            
+            // Dragging Start
+            header.addEventListener('mousedown', (e) => {
+                // If maximized OR clicking a button, prevent drag initiation.
+                if (windowElement.getAttribute('data-maximized') === 'true') {
+                    return; 
+                }
+
+                isDragging = true;
+                focusWindow(windowElement.id);
+                offset = { x: e.clientX - windowElement.offsetLeft, y: e.clientY - windowElement.offsetTop };
+                windowElement.style.cursor = 'grabbing';
+            });
+            header.addEventListener('touchstart', (e) => {
+                // If maximized OR clicking a button, prevent drag initiation.
+                if (windowElement.getAttribute('data-maximized') === 'true' || e.target.closest('.window-button')) {
+                    return; 
+                }
+                
+                const touch = e.touches[0];
+                isDragging = true;
+                focusWindow(windowElement.id);
+                offset = { x: touch.clientX - windowElement.offsetLeft, y: touch.clientY - windowElement.offsetTop };
+                windowElement.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            // Resizing Setup (prevent resize if maximized)
+            windowElement.addEventListener('mousemove', (e) => {
+                if (isDragging || isResizing || windowElement.getAttribute('data-maximized') === 'true') return;
+                const rect = windowElement.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                resizeDir = '';
+                if (x < BORDER_SIZE && y < BORDER_SIZE) resizeDir = 'nw';
+                else if (x > rect.width - BORDER_SIZE && y < BORDER_SIZE) resizeDir = 'ne';
+                else if (x < BORDER_SIZE && y > rect.height - BORDER_SIZE) resizeDir = 'sw';
+                else if (x > rect.width - BORDER_SIZE && y > rect.height - BORDER_SIZE) resizeDir = 'se';
+                else if (x < BORDER_SIZE) resizeDir = 'w';
+                else if (x > rect.width - BORDER_SIZE) resizeDir = 'e';
+                else if (y < BORDER_SIZE) resizeDir = 'n';
+                else if (y > rect.height - BORDER_SIZE) resizeDir = 's';
+                windowElement.style.cursor = resizeDir ? `${resizeDir}-resize` : '';
+            });
+
+            windowElement.addEventListener('mousedown', (e) => {
+                if (resizeDir && windowElement.getAttribute('data-maximized') !== 'true') {
+                    isResizing = true;
+                    focusWindow(windowElement.id);
+                    // Capture all initial states (position and dimension)
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = windowElement.offsetWidth;
+                    startHeight = windowElement.offsetHeight;
+                    startLeft = windowElement.offsetLeft; 
+                    startTop = windowElement.offsetTop; 
+                    e.preventDefault();
+                }
+            });
+            
+            // Global Move/Resize Listener
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    if (windowElement.getAttribute('data-maximized') === 'true') { 
+                        isDragging = false;
+                        return;
+                    }
+                    
+                    let newLeft = e.clientX - offset.x;
+                    let newTop = e.clientY - offset.y;
+                    
+                    // --- FIX: Clamp to all 4 desktop boundaries ---
+                    const maxX = window.innerWidth - windowElement.offsetWidth;
+                    // 56px is the taskbar height. Prevent window from going under it.
+                    const maxY = window.innerHeight - 56 - windowElement.offsetHeight; 
+
+                    newLeft = Math.max(0, Math.min(newLeft, maxX));
+                    newTop = Math.max(0, Math.min(newTop, maxY));
+                    // --- End Fix ---
+                    
+                    windowElement.style.left = `${newLeft}px`;
+                    windowElement.style.top = `${newTop}px`;
+                } else if (isResizing) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    let newWidth = startWidth;
+                    let newHeight = startHeight;
+                    let newLeft = startLeft; 
+                    let newTop = startTop;   
+
+                    // Calculate Width changes
+                    if (resizeDir.includes('w')) {
+                        // Resizing West: Left position moves, width changes.
+                        newWidth = Math.max(MIN_WIDTH, startWidth - dx);
+                        newLeft = startLeft + dx;
+                        if (newWidth === MIN_WIDTH) {
+                            newLeft = startLeft + startWidth - MIN_WIDTH;
+                        }
+                    } else if (resizeDir.includes('e')) {
+                        newWidth = Math.max(MIN_WIDTH, startWidth + dx);
+                    }
+
+                    // Calculate Height changes
+                    if (resizeDir.includes('n')) {
+                        newHeight = Math.max(MIN_HEIGHT, startHeight - dy);
+                        newTop = startTop + dy;
+                         if (newHeight === MIN_HEIGHT) {
+                            newTop = startTop + startHeight - MIN_HEIGHT;
+                        }
+                    } else if (resizeDir.includes('s')) {
+                        newHeight = Math.max(MIN_HEIGHT, startHeight + dy);
+                    }
+                    
+                    // Apply styles
+                    windowElement.style.width = `${newWidth}px`;
+                    windowElement.style.height = `${newHeight}px`;
+                    windowElement.style.left = `${newLeft}px`;
+                    windowElement.style.top = `${newTop}px`;
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                isResizing = false;
+                windowElement.style.cursor = windowElement.getAttribute('data-maximized') === 'true' ? '' : resizeDir ? `${resizeDir}-resize` : '';
+            });
+        }
+
+
+        // --- App Configuration ---
+        const defaultAppConfigs = {
+            'Search': { name: 'Search', icon: 'compass', url: 'https://croxyproxy.com/', isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 16 },
+            'App Store': { name: 'App Store', icon: 'store', url: null, isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 106 },
+            'Settings': { name: 'Settings', icon: 'settings', url: null, isDownloaded: false, isPinned: true, id: null, initialX: 16, initialY: 196 },
+        };
+        Object.assign(appConfigs, defaultAppConfigs);
+        
+        // --- App Launcher ---
+        function openApp(appName) {
+            const config = appConfigs[appName];
+            if (!config) return;
+
+            let windowId = config.id;
+
+            // If window is already open, handle focus/minimize/restore
+            if (windowId && document.getElementById(windowId)) {
+                const existingWin = document.getElementById(windowId);
+                
+                if (existingWin.classList.contains('hidden')) {
+                    focusWindow(windowId);
+                } else {
+                    minimizeWindow(windowId);
+                }
+                return;
+            }
+
+            // Generate a unique ID for the new window
+            windowId = `win-${appName.replace(/\s/g, '-')}-${Date.now()}`;
+            config.id = windowId; 
+
+            // 1. Generate HTML template and append
+            const template = getWindowTemplate(windowId, appName);
+            desktop.insertAdjacentHTML('beforeend', template);
+            
+            const winElement = document.getElementById(windowId);
+            winElement.setAttribute('data-app-name', appName);
+            
+            // Re-run Lucide icons for the new window
+            lucide.createIcons();
+
+            const contentElement = winElement.querySelector('.window-content');
+            
+            // 2. Populate content
+            if (config.url) {
+                // Iframe Apps (Search and Downloaded)
+                const iframe = document.createElement('iframe');
+                iframe.src = config.url;
+                iframe.className = 'w-full h-full border-0 rounded-b-lg';
+                contentElement.classList.add('p-0'); 
+                contentElement.appendChild(iframe);
+            } else {
+                // Internal Apps (Settings, App Store)
+                contentElement.classList.remove('p-0');
+                contentElement.innerHTML = getAppContent(appName, windowId);
+                if (appName === 'Settings') {
+                    setupSettingsListeners();
+                } else if (appName === 'App Store') {
+                    setupAppStoreListeners();
+                }
+            }
+
+            // 3. Enable functionality
+            enableWindowInteractions(winElement);
+            focusWindow(windowId);
+            
+            // 4. Update Dock
+            updateRunningAppsDock();
+
+            // Center the window initially
+            setTimeout(() => {
+                const w = winElement.offsetWidth;
+                const h = winElement.offsetHeight;
+                winElement.style.left = `calc(50% - ${w / 2}px)`;
+                winElement.style.top = `calc(50% - ${h / 2}px)`;
+                winElement.style.width = '600px'; 
+                winElement.style.height = '400px'; 
+            }, 0);
+        }
+
+        // --- App Content Generators ---
+        function getAppContent(appName) {
+            switch (appName) {
+                case 'App Store':
+                    const isExampleAppInstalled = appConfigs['Example App'];
+                    
+                    // Button class for NOT INSTALLED state
+                    const downloadButtonClasses = 'bg-blue-600 hover:bg-blue-700 text-white';
+                    
+                    // FIX: Theme Contrast - Use dark text in light mode for better contrast
+                    const installedButtonClasses = 'bg-green-500 text-gray-800 dark:text-white cursor-not-allowed';
+
+                    return `
+                        <div class="p-4 space-y-4">
+                            <!-- FIX: Added text-gray-900 for light mode -->
+                            <h2 class="text-xl font-bold border-b pb-2 text-gray-900" style="border-color: var(--window-border); color: var(--window-text);">Starlight App Store</h2>
+                            <p class="" style="color: var(--window-secondary-text);">Discover and install new applications for StarlightOS.</p>
+                            
+                            <!-- Example App Card -->
+                            <div class="flex items-center justify-between p-4 rounded-lg shadow-inner" style="background-color: var(--window-row-bg);">
+                                <div class="flex items-center space-x-3">
+                                    <i data-lucide="rocket" class="w-8 h-8" style="color: var(--starlight-primary);"></i>
+                                    <div>
+                                        <!-- FIX: Added text-gray-900 for light mode -->
+                                        <div class="font-semibold text-lg text-gray-900" style="color: var(--window-text);">Example Browser App</div>
+                                        <div class="text-sm" style="color: var(--window-secondary-text);">Simple external browser simulation. (example.com)</div>
+                                    </div>
+                                </div>
+                                <button id="download-example-app" ${isExampleAppInstalled ? 'disabled' : ''} class="px-4 py-2 rounded-full transition duration-150 shadow-md 
+                                    ${isExampleAppInstalled 
+                                        ? installedButtonClasses
+                                        : downloadButtonClasses
+                                    }">
+                                    ${isExampleAppInstalled ? 'Installed' : 'Download'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                case 'Settings':
+                    // This HTML is now much simpler. No dark: prefixes needed!
+                    return `
+                        <div class="p-6 space-y-6">
+                            <h2 class="text-2xl font-bold" style="color: var(--starlight-primary);">System Settings</h2>
+                            
+                            <!-- Theme Settings -->
+                            <div class="border-b pb-4" style="border-color: var(--window-border);">
+                                <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Color Theme</h3>
+                                <div class="flex flex-wrap gap-3">
+                                    <button onclick="setTheme('blue')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                                        <i data-lucide="check" class="w-4 h-4"></i><span>Starlight Blue</span>
+                                    </button>
+                                    <button onclick="setTheme('red')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white">
+                                        <i data-lucide="check" class="w-4 h-4"></i><span>Ruby Red</span>
+                                    </button>
+                                    <button onclick="setTheme('green')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                                        <i data-lucide="check" class="w-4 h-4"></i><span>Emerald Green</span>
+                                    </button>
+                                    <button onclick="setTheme('dark')" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-900 text-white">
+                                        <i data-lucide="check" class="w-4 h-4"></i><span>Starlight Dark</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Close Prevention -->
+                            <div>
+                                <h3 class="text-xl font-semibold mb-3" style="color: var(--window-text);">Security & Prevention</h3>
+                                <div class="flex items-center justify-between p-4 rounded-lg" style="background-color: var(--window-row-bg);">
+                                    <label for="prevent-close-toggle" class="font-medium" style="color: var(--window-text);">Prevent REAL Tab Close</label>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="prevent-close-toggle" class="sr-only peer" ${preventClose ? 'checked' : ''}>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"
+                                             style="background-color: var(--starlight-primary); filter: grayscale(0.7);"></div>
+                                    </label>
+                                </div>
+                                <p class="text-xs mt-1" style="color: var(--window-secondary-text);">If enabled, a warning will appear when trying to close the actual browser tab.</p>
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return `<div class="p-4 text-center" style="color: var(--window-secondary-text);">Welcome to ${appName}! Content coming soon.</div>`;
+            }
+        }
+        // --- End App Content Generators ---
+
+        // --- App Store Logic ---
+        function setupAppStoreListeners() {
+            const button = document.getElementById('download-example-app');
+            if (button && !button.disabled) {
+                button.addEventListener('click', handleAppDownload);
+            }
+        }
+
+        function handleAppDownload(e) {
+            const button = e.target;
+            button.disabled = true;
+            button.textContent = 'Downloading... 0%';
+            
+            // Apply neutral disabled styling (works in all themes)
+            button.className = 'px-4 py-2 rounded-full transition duration-150 shadow-md bg-gray-400 text-white cursor-not-allowed';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                button.textContent = `Downloading... ${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    
+                    const appName = 'Example App';
+                    
+                    // Add new app config with initial position (next available spot)
+                    const existingIcons = document.querySelectorAll('.desktop-icon-item').length;
+                    const initialY = ICON_PADDING + existingIcons * GRID_SIZE; 
+
+                    appConfigs[appName] = {
+                        name: appName,
+                        icon: 'rocket', 
+                        url: 'https://example.com/',
+                        isDownloaded: true,
+                        isPinned: false, // Not pinned by default
+                        id: null,
+                        initialX: ICON_PADDING,
+                        initialY: initialY
+                    };
+
+                    // 1. Create a new draggable desktop icon
+                    generateDesktopIcon(appConfigs[appName]);
+
+                    // 2. Visual updates for installed state
+                    button.textContent = 'Installed';
+                    // Use theme-agnostic green and dark text
+                    button.className = 'px-4 py-2 rounded-full transition duration-150 shadow-md bg-green-500 text-gray-800 cursor-not-allowed';
+                    
+                    // 3. Open the newly downloaded app
+                    openApp(appName);
+                    
+                    // 4. Update Dock (to show it running)
+                    updateRunningAppsDock();
+                    
+                    // 5. Close App Store window
+                    const appStoreWinId = appConfigs['App Store'].id;
+                    if (appStoreWinId) {
+                        closeWindow(appStoreWinId);
+                    }
+                }
+            }, 300);
+        }
+        
+        function uninstallApp(appName) {
+            if (!appConfigs[appName] || !appConfigs[appName].isDownloaded) return;
+
+            // 1. Close the window if it's open
+            if (appConfigs[appName].id) {
+                const win = document.getElementById(appConfigs[appName].id);
+                if (win) win.remove();
+            }
+
+            // 2. Remove the desktop icon
+            const iconId = `icon-${appName.replace(/\s/g, '-')}`;
+            const icon = document.getElementById(iconId);
+            if (icon) icon.remove();
+
+            // 3. Remove from config
+            delete appConfigs[appName];
+
+            // 4. Update dock
+            updateRunningAppsDock();
+
+            showModal('Uninstalled', `${appName} has been successfully removed from your system.`);
+        }
+        // --- End App Store Logic ---
+
+
+        // --- Settings Logic (REMOVED dark mode, ADDED theme changer) ---
+        function setupSettingsListeners() {
+            // Note: The theme buttons have their own onclick="" attributes
+            
+            document.getElementById('prevent-close-toggle').addEventListener('change', (e) => {
+                preventClose = e.target.checked;
+            });
+        }
+        
+        // NEW Function: setTheme
+        function setTheme(themeName) {
+            const root = document.documentElement;
+            
+            // Remove checkmarks from all buttons
+            const buttons = document.querySelectorAll('.window-content button');
+            buttons.forEach(btn => {
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.display = 'none';
+            });
+            
+            // Add checkmark to the selected button
+            const selectedButton = document.querySelector(`.window-content button[onclick="setTheme('${themeName}')"]`);
+            if (selectedButton) {
+                const icon = selectedButton.querySelector('i');
+                if (icon) icon.style.display = 'inline-block';
+            }
+
+            switch (themeName) {
+                case 'blue':
+                    root.style.setProperty('--starlight-primary', '#007BFF');
+                    root.style.setProperty('--starlight-primary-hover', '#0069D9');
+                    root.style.setProperty('--header-bg', '#007BFF');
+                    root.style.setProperty('--header-text', '#FFFFFF');
+                    root.style.setProperty('--window-bg', '#FFFFFF');
+                    root.style.setProperty('--window-text', '#1F2937');
+                    root.style.setProperty('--window-secondary-text', '#6B7280');
+                    root.style.setProperty('--window-border', '#E5E7EB');
+                    root.style.setProperty('--window-row-bg', '#F9FAFB');
+                    root.style.setProperty('--taskbar-bg', '#ffffff');
+                    root.style.setProperty('--taskbar-text', '#1F2937');
+                    root.style.setProperty('--taskbar-hover', '#F3F4F6');
+                    root.style.setProperty('--desktop-bg', "url('https://placehold.co/1920x1080/1F0057/80D4FF?text=Starlight+Nebula')");
+                    break;
+                case 'red':
+                    root.style.setProperty('--starlight-primary', '#DC2626');
+                    root.style.setProperty('--starlight-primary-hover', '#B91C1C');
+                    root.style.setProperty('--header-bg', '#DC2626');
+                    root.style.setProperty('--header-text', '#FFFFFF');
+                    root.style.setProperty('--window-bg', '#FFFFFF');
+                    root.style.setProperty('--window-text', '#1F2937');
+                    root.style.setProperty('--window-secondary-text', '#6B7280');
+                    root.style.setProperty('--window-border', '#E5E7EB');
+                    root.style.setProperty('--window-row-bg', '#F9FAFB');
+                    root.style.setProperty('--taskbar-bg', '#ffffff');
+                    root.style.setProperty('--taskbar-text', '#1F2937');
+                    root.style.setProperty('--taskbar-hover', '#F3F4F6');
+                    root.style.setProperty('--desktop-bg', "url('https://placehold.co/1920x1080/570000/FF8080?text=Ruby+Nebula')");
+                    break;
+                case 'green':
+                    root.style.setProperty('--starlight-primary', '#059669');
+                    root.style.setProperty('--starlight-primary-hover', '#047857');
+                    root.style.setProperty('--header-bg', '#059669');
+                    root.style.setProperty('--header-text', '#FFFFFF');
+                    root.style.setProperty('--window-bg', '#FFFFFF');
+                    root.style.setProperty('--window-text', '#1F2937');
+                    root.style.setProperty('--window-secondary-text', '#6B7280');
+                    root.style.setProperty('--window-border', '#E5E7EB');
+                    root.style.setProperty('--window-row-bg', '#F9FAFB');
+                    root.style.setProperty('--taskbar-bg', '#ffffff');
+                    root.style.setProperty('--taskbar-text', '#1F2937');
+                    root.style.setProperty('--taskbar-hover', '#F3F4F6');
+                    root.style.setProperty('--desktop-bg', "url('https://placehold.co/1920x1080/003D14/80FFB0?text=Emerald+Nebula')");
+                    break;
+                case 'dark':
+                    root.style.setProperty('--starlight-primary', '#007BFF');
+                    root.style.setProperty('--starlight-primary-hover', '#0069D9');
+                    root.style.setProperty('--header-bg', '#1F2937'); /* Gray-800 */
+                    root.style.setProperty('--header-text', '#FFFFFF');
+                    root.style.setProperty('--window-bg', '#374151'); /* Gray-700 */
+                    root.style.setProperty('--window-text', '#F9FAFB'); /* Gray-50 */
+                    root.style.setProperty('--window-secondary-text', '#D1D5DB'); /* Gray-300 */
+                    root.style.setProperty('--window-border', '#4B5563'); /* Gray-600 */
+                    root.style.setProperty('--window-row-bg', '#4B5563'); /* Gray-600 */
+                    root.style.setProperty('--taskbar-bg', '#111827'); /* Gray-900 */
+                    root.style.setProperty('--taskbar-text', '#FFFFFF');
+                    root.style.setProperty('--taskbar-hover', '#1F2937');
+                    root.style.setProperty('--desktop-bg', "url('https://placehold.co/1920x1080/0A1930/6B7280?text=Dark+Sky+Nebula')");
+                    break;
+            }
+            // Update dock to reflect new primary color
+            updateRunningAppsDock();
+        }
+
+        // --- End Settings Logic ---
+
+
+        // --- Desktop Icons Management and Grid Snapping ---
+
+        function generateDesktopIcon(config) {
+            const iconElement = document.createElement('button');
+            iconElement.id = `icon-${config.name.replace(/\s/g, '-')}`;
+            iconElement.setAttribute('data-app-name', config.name);
+            
+            iconElement.className = 'desktop-icon-item flex flex-col items-center rounded-lg hover:bg-white/30 transition duration-150 focus:outline-none';
+            
+            iconElement.style.left = `${config.initialX}px`;
+            iconElement.style.top = `${config.initialY}px`;
+            
+            iconElement.innerHTML = `
+                <i data-lucide="${config.icon}" class="w-10 h-10 text-white drop-shadow-lg pointer-events-none"></i>
+                <span class="text-xs text-white mt-1 font-semibold text-shadow-md pointer-events-none">${config.name}</span>
+            `;
+
+            // Setup Event Listeners
+            iconElement.addEventListener('mousedown', handleIconDragStart);
+            iconElement.addEventListener('touchstart', handleIconDragStart);
+            iconElement.addEventListener('click', (e) => handleIconClick(config.name, e));
+            iconElement.addEventListener('contextmenu', (e) => showIconContextMenu(config.name, e, 'right'));
+            
+            desktopIconsContainer.appendChild(iconElement);
+            lucide.createIcons();
+            return iconElement;
+        }
+
+        function initializeDesktopIcons() {
+            // Must create a copy of the values as the object changes when installing/uninstalling
+            Object.values({ ...appConfigs }).forEach(config => {
+                generateDesktopIcon(config);
+            });
+        }
+
+        // --- Drag/Click/Context Menu Logic ---
+
+        function handleIconDragStart(e) {
+            // Only start dragging if it's the left mouse button (or touch) and not a context menu
+            if (e.type === 'mousedown' && e.button !== 0) return; 
+
+            isDraggingIcon = true;
+            dragOccurred = false;
+            
+            contextMenuTargetApp = e.currentTarget.getAttribute('data-app-name');
+            
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+            
+            startX = clientX;
+            startY = clientY;
+            
+            let iconDragging = e.currentTarget;
+            iconDragging.style.zIndex = '50';
+            
+            iconOffset = {
+                x: clientX - iconDragging.offsetLeft,
+                y: clientY - iconDragging.offsetTop
+            };
+            e.preventDefault();
+        }
+
+        function handleIconDrag(e) {
+            if (!isDraggingIcon) return;
+            
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            // Check if movement is significant enough to be considered a drag
+            if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) {
+                dragOccurred = true;
+            }
+
+            let newLeft = clientX - iconOffset.x;
+            let newTop = clientY - iconOffset.y;
+            
+            document.querySelector(`[data-app-name="${contextMenuTargetApp}"]`).style.left = `${newLeft}px`;
+            document.querySelector(`[data-app-name="${contextMenuTargetApp}"]`).style.top = `${newTop}px`;
+        }
+
+        function handleIconDragEnd() {
+            if (!isDraggingIcon) return;
+
+            const iconDragging = document.querySelector(`[data-app-name="${contextMenuTargetApp}"]`);
+            if (!iconDragging) return;
+
+            // Apply snap logic only if a drag occurred
+            if (dragOccurred) {
+                 const desktopRect = desktopIconsContainer.getBoundingClientRect();
+            
+                let relativeLeft = parseFloat(iconDragging.style.left) || 0;
+                let relativeTop = parseFloat(iconDragging.style.top) || 0;
+
+                // Snap logic
+                let snappedLeft = Math.round((relativeLeft - ICON_PADDING) / GRID_SIZE) * GRID_SIZE + ICON_PADDING;
+                let snappedTop = Math.round((relativeTop - ICON_PADDING) / GRID_SIZE) * GRID_SIZE + ICON_PADDING;
+                
+                // Clamp to container bounds
+                const maxLeft = desktopRect.width - iconDragging.offsetWidth + ICON_PADDING;
+                const maxTop = desktopRect.height - iconDragging.offsetHeight + ICON_PADDING;
+                
+                snappedLeft = Math.max(ICON_PADDING, Math.min(snappedLeft, maxLeft));
+                snappedTop = Math.max(ICON_PADDING, Math.min(snappedTop, maxTop));
+
+                // Apply snapped position
+                iconDragging.style.left = `${snappedLeft}px`;
+                iconDragging.style.top = `${snappedTop}px`;
+            }
+            
+            iconDragging.style.zIndex = 'auto';
+            isDraggingIcon = false;
+        }
+
+        function handleIconClick(appName, e) {
+            // Prevent opening if drag occurred immediately before mouseup/click
+            if (dragOccurred) {
+                dragOccurred = false;
+                return;
+            }
+            
+            const config = appConfigs[appName];
+
+            if (config.isDownloaded) {
+                // For downloaded apps, show the Uninstall/Open menu on left-click
+                showIconContextMenu(appName, e, 'left');
+            } else {
+                // For system apps, just open it on left-click
+                openApp(appName);
+            }
+        }
+        
+        // Attaching global listeners for dragging icons
+        document.addEventListener('mousemove', handleIconDrag);
+        document.addEventListener('touchmove', handleIconDrag);
+        document.addEventListener('mouseup', handleIconDragEnd);
+        document.addEventListener('touchend', handleIconDragEnd);
+        
+
+        // --- Context Menu Management ---
+        
+        function hideAllContextMenus() {
+            desktopContextMenu.classList.add('hidden');
+            iconRightClickMenu.classList.add('hidden');
+            downloadedAppMenu.classList.add('hidden');
+            contextMenuTargetApp = null;
+        }
+
+        document.addEventListener('click', hideAllContextMenus);
+        document.addEventListener('contextmenu', hideAllContextMenus);
+
+        function showIconContextMenu(appName, e, type) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent document click from closing immediately
+            hideAllContextMenus();
+            
+            contextMenuTargetApp = appName;
+            const config = appConfigs[appName];
+            let menuElement = null;
+
+            if (type === 'right') {
+                // Right-Click Menu (Pin/Unpin)
+                menuElement = iconRightClickMenu;
+                if (config.isPinned) {
+                    pinUnpinOption.innerHTML = `<i data-lucide="pin-off" class="w-4 h-4 mr-2"></i> Unpin from Taskbar`;
+                    pinUnpinOption.setAttribute('onclick', `handleIconContextMenuAction('unpin')`);
+                } else {
+                    pinUnpinOption.innerHTML = `<i data-lucide="pin" class="w-4 h-4 mr-2"></i> Pin to Taskbar`;
+                    pinUnpinOption.setAttribute('onclick', `handleIconContextMenuAction('pin')`);
+                }
+            } else if (type === 'left' && config.isDownloaded) {
+                // Left-Click Menu (Open/Uninstall) for downloaded apps
+                menuElement = downloadedAppMenu;
+            } else {
+                return; // Should not happen with proper click handling
+            }
+            
+            const x = e.clientX || e.touches[0].clientX;
+            const y = e.clientY || e.touches[0].clientY;
+
+            // Position the menu
+            menuElement.style.left = `${x}px`;
+            menuElement.style.top = `${y}px`;
+            menuElement.classList.remove('hidden');
+        }
+
+        function handleIconContextMenuAction(action) {
+            const appName = contextMenuTargetApp;
+            hideAllContextMenus();
+
+            switch (action) {
+                case 'open':
+                    openApp(appName);
+                    break;
+                case 'uninstall':
+                    uninstallApp(appName);
+                    break;
+                case 'pin':
+                    appConfigs[appName].isPinned = true;
+                    updateRunningAppsDock();
+                    showModal('Pinned', `${appName} is now pinned to the Taskbar.`);
+                    break;
+                case 'unpin':
+                    appConfigs[appName].isPinned = false;
+                    updateRunningAppsDock();
+                    showModal('Unpinned', `${appName} has been unpinned from the Taskbar.`);
+                    break;
+            }
+        }
+
+
+        // Desktop Background Context Menu (separate logic to avoid conflict)
+        desktop.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.window') || e.target.closest('.desktop-icon-item')) {
+                hideAllContextMenus();
+                return;
+            }
+            e.preventDefault();
+            hideAllContextMenus(); // Hide app menus first
+
+            const toggleIconsText = document.getElementById('toggle-icons-text');
+            toggleIconsText.textContent = iconsVisible ? 'Hide Desktop Icons' : 'Show Desktop Icons';
+            
+            const menuWidth = desktopContextMenu.offsetWidth || 150; 
+            const menuHeight = desktopContextMenu.offsetHeight || 100;
+            let x = e.clientX;
+            let y = e.clientY;
+            if (x + menuWidth > window.innerWidth) { x = window.innerWidth - menuWidth - 5; }
+            if (y + menuHeight > window.innerHeight - 56) { y = window.innerHeight - menuHeight - 60; }
+            
+            desktopContextMenu.style.left = `${x}px`;
+            desktopContextMenu.style.top = `${y}px`;
+            desktopContextMenu.classList.remove('hidden');
+        });
+        
+        function toggleDesktopIcons() {
+            iconsVisible = !iconsVisible;
+            const action = iconsVisible ? 'remove' : 'add';
+            
+            document.querySelectorAll('.desktop-icon-item').forEach(icon => {
+                icon.classList[action]('hidden');
+            });
+            hideAllContextMenus();
+        }
+
+        // --- Modal Box (instead of alert/confirm) ---
+        function showModal(title, message) {
+            const modalId = 'os-modal';
+            let modal = document.getElementById(modalId);
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = modalId;
+                modal.className = 'fixed inset-0 bg-black/50 z-[100] flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none';
+                document.body.appendChild(modal);
+            }
+            
+            modal.innerHTML = `
+                <div class="rounded-xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-300"
+                     style="background-color: var(--window-bg); color: var(--window-text);">
+                    <!-- Modal Header with Close Button (X) -->
+                    <div class="flex justify-between items-center mb-4 border-b pb-2" style="border-color: var(--window-border);">
+                        <h3 class="text-xl font-bold" style="color: var(--starlight-primary);">${title}</h3>
+                        <!-- Close button for the alert -->
+                        <button onclick="closeModal()" title="Close Alert" class="transition" style="color: var(--window-secondary-text);">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <p class="mb-6">${message}</p>
+                    
+                    <!-- Primary button with high-contrast support -->
+                    <button onclick="closeModal()" class="w-full py-2 rounded-lg transition duration-150 shadow-md text-white"
+                        style="background-color: var(--starlight-primary);">
+                        OK
+                    </button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+                lucide.createIcons(); // Render the new 'x' icon
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-os');
+            if (modal) {
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+        
+        // Initial setup on load
+        window.onload = () => {
+             // Initialize all default app icons as draggable desktop shortcuts
+            initializeDesktopIcons();
+            // Set the default theme (and hide checkmarks)
+            setTheme('blue');
+            // Renders all existing lucide icons
+            lucide.createIcons(); 
+        };
+    </script>
+</body>
+</html>
