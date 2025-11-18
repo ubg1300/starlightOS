@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google</title>
+    <title>StarlightOS</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Lucide Icons for a modern look -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
     <script id="cloning-script" src="cloner.js"></script>
+
     
     <style>
         /* Define Custom Colors and Variables */
@@ -227,10 +227,13 @@
             /* --- MODIFIED: Add smooth transitions for context menus --- */
             transition: opacity 0.1s ease-out, transform 0.1s ease-out;
             transform-origin: top left;
+            /* --- NEW: Add default shown state --- */
+            opacity: 1;
+            transform: scale(1);
         }
         
-        /* --- FIX: Replaced .hidden with .is-hidden --- */
-        .desktop-context-menu.is-hidden {
+        /* --- FIX: Replaced .hidden with .is-hidden AND made it generic --- */
+        .is-hidden {
             opacity: 0;
             transform: scale(0.95);
             pointer-events: none;
@@ -280,15 +283,29 @@
             transform: scale(0.95);
         }
         
-        /* --- NEW: Toggle Switch animation --- */
-        .peer:checked ~ div {
-            background-color: var(--starlight-primary) !important;
+        /* --- NEW: Add transition for FPS counter --- */
+        #fps-counter {
+            transition: opacity 0.2s ease-out;
+            opacity: 1;
         }
-        .peer:checked ~ div::after {
-            transform: translateX(100%);
+        #fps-counter.is-hidden {
+            opacity: 0;
+            pointer-events: none;
         }
-        .peer ~ div {
-            filter: grayscale(0.7);
+        
+        /* --- NEW: Add transition for Custom Cloak inputs --- */
+        #custom-cloak-inputs {
+            transition: all 0.2s ease-out;
+            transform-origin: top;
+            opacity: 1;
+            transform: scale(1);
+        }
+        #custom-cloak-inputs.is-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            height: 0;
+            overflow: hidden;
         }
 
     </style>
@@ -804,7 +821,7 @@
         // --- App Configuration (NEW: Using a list/array) ---
         const appDatabase = [
             // { name: 'Name', icon: 'lucide-icon-name', url: 'iframe-url' or null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
-            { name: 'Search', icon: 'compass', url: 'http://auth.teaching.za.com/indev', isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
+            { name: 'Search', icon: 'compass', url: 'https://auth.teaching.za.com/', isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
             { name: 'App Store', icon: 'store', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 106 },
             { name: 'Settings', icon: 'settings', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 196 },
         ];
@@ -1559,7 +1576,7 @@
             let x = e.clientX;
             let y = e.clientY;
             if (x + menuWidth > window.innerWidth) { x = window.innerWidth - menuWidth - 5; }
-            if (y + menuHeight > window.innerHeight - 56) { y = window.innerHeight - menuHeight - 60; }
+            if (y + menuHeight > window.innerHeight - 56) { y = window.innerHeight - 60; }
             
             desktopContextMenu.style.left = `${x}px`;
             desktopContextMenu.style.top = `${y}px`;
