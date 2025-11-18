@@ -479,7 +479,7 @@
 
         // 2. Window Manager Helper
         function getWindowTemplate(id, title, initialWidth = '600px', initialHeight = '400px') {
-            const isIframeApp = ['Search', 'Games', 'Chat'].includes(title);
+            const isIframeApp = ['Search', 'Games', 'Chat','Calculator'].includes(title);
             const contentPaddingClass = isIframeApp ? 'p-0' : ''; // Use p-0 for iframes
             
             return `
@@ -903,6 +903,12 @@
             {
                 name: 'Chat',
                 icon: 'message-square', // User's requested icon
+                url: 'https://deadsimplechat.com/xlR-fRK3h', // User's requested URL
+                description: 'Chat with the starlight games community!'
+            },
+            {
+                name: 'Calculator',
+                icon: 'calculator', // User's requested icon
                 url: 'https://deadsimplechat.com/xlR-fRK3h', // User's requested URL
                 description: 'Chat with the starlight games community!'
             },
