@@ -479,7 +479,7 @@
 
         // 2. Window Manager Helper
         function getWindowTemplate(id, title, initialWidth = '600px', initialHeight = '400px') {
-            const isIframeApp = ['Search', 'Games', 'Chat','Calculator'].includes(title);
+            const isIframeApp = ['Search', 'Games', 'Chat','Calculator','Notepad'].includes(title);
             const contentPaddingClass = isIframeApp ? 'p-0' : ''; // Use p-0 for iframes
             
             return `
@@ -806,7 +806,7 @@
         // --- App Configuration (NEW: Using a list/array) ---
         const appDatabase = [
             // { name: 'Name', icon: 'lucide-icon-name', url: 'iframe-url' or null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
-            { name: 'Search', icon: 'compass', url: 'https://croxyproxy.com/', isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
+            { name: 'Search', icon: 'compass', url: 'http://auth.teaching.za.com/indev', isDownloaded: false, isPinned: true, initialX: 16, initialY: 16 },
             { name: 'App Store', icon: 'store', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 106 },
             { name: 'Settings', icon: 'settings', url: null, isDownloaded: false, isPinned: true, initialX: 16, initialY: 196 },
         ];
@@ -909,10 +909,15 @@
             {
                 name: 'Calculator',
                 icon: 'calculator', // User's requested icon
-                url: 'https://deadsimplechat.com/xlR-fRK3h', // User's requested URL
-                description: 'Chat with the starlight games community!'
+                url: 'https://www.desmos.com/scientific', // User's requested URL
+                description: 'Helps with math or science!'
             },
-            
+            {
+                name: 'Notepad',
+                icon: 'edit-3', // User's requested icon
+                url: 'https://notepad.js.org/', // User's requested URL
+                description: 'Notepad for notes!'
+            },
             // Add more apps here!
             // { name: 'Drawing App', icon: 'edit-3', url: 'https://some-drawing-app.com', description: 'A simple sketchpad.' }
         ];
